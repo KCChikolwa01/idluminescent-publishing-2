@@ -1,0 +1,14 @@
+ID Luminescent Publishing - static site for Cloudflare Pages
+
+Upload the CONTENTS of this folder (not the zip itself) as a Cloudflare Pages project.
+Direct Upload is enough. No build command.
+
+What changed in this version
+- Substack-style home feed, article and note pages, golden-ratio layout, vivid colour.
+- Shop buttons: 8 Kindle eBooks and 3 paperbacks (Amazon), 4 audiobooks (ElevenReader), Kobo.
+- Official Kobo covers shown where they exist; a vivid typographic jacket otherwise.
+
+Editing
+- Amazon links on the home page are numbered. Once you know which title each opens,
+  tell Claude which title each link opens and the numbered cards will be named.
+- Newsletter: no email box, nothing stored, until MailerLite is connected and tested.

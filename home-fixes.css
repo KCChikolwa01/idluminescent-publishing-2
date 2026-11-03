@@ -1,0 +1,19 @@
+/* Homepage book-cover visibility fixes. Keep cover artwork behind the overlaid title and author. */
+.cover img.real { z-index: 0; }
+.cover > :not(img.real) { position: relative; z-index: 2; }
+
+/* Match the three homepage shelves' requested grid proportions on narrow screens. */
+@media (max-width: 860px) {
+  #ebooks .grid,
+  #audiobooks .grid,
+  #paperbacks .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  #ebooks .grid,
+  #audiobooks .grid,
+  #paperbacks .grid {
+    grid-template-columns: 1fr;
+  }
+}

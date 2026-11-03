@@ -1,6 +1,17 @@
-/* Homepage book-cover visibility fixes. Keep cover artwork behind the overlaid title and author. */
+/* Homepage book covers use the actual jacket art; hide duplicate title/author overlays. */
 .cover img.real { z-index: 0; }
 .cover > :not(img.real) { position: relative; z-index: 2; }
+#ebooks .cover .ct,
+#audiobooks .cover .ct,
+#paperbacks .cover .ct,
+#ebooks .cover .cs,
+#audiobooks .cover .cs,
+#paperbacks .cover .cs,
+#ebooks .cover .cb,
+#audiobooks .cover .cb,
+#paperbacks .cover .cb {
+  display: none;
+}
 
 /* Match the three homepage shelves' requested grid proportions on narrow screens. */
 @media (max-width: 860px) {

@@ -90,6 +90,30 @@
 <section class="shelf"><div class="wrap"><div class="kobo-band"><div><p class="kicker" style="color:#fff">Kobo</p><h3>Prefer Kobo? Our eBooks are there too.</h3><p>See the full list of titles and retailer links.</p></div><a class="btn btn-glow" href="/books/">See all books</a></div></div></section>
 <section class="shelf tint" id="newsletter"><div class="wrap"><div class="shelf-head"><div><p class="label">Newsletter</p><h2>Stay Connected with ID Luminescent</h2><p>New releases, selected passages, and reflections from KC Chikolwa. Only when there is something to send.</p></div></div><div class="card" style="max-width:560px"><div style="text-align:left" class="sender-form-field" data-sender-form-id="bmZr3O"></div></div></div></section>
 <footer class="foot"><div class="wrap"><div class="foot-grid"><div><img src="/brand/lockup.jpg" alt="ID Luminescent Publishing" style="width:210px;border-radius:13px;margin-bottom:21px"><p class="big">Reading is an activity of the Mind.</p><p>ID Luminescent Publishing — lighting up the inner world.<br>Books by KC Chikolwa on love, trust, identity and the inner life.</p></div><div><h5>Explore</h5><a href="/index.html">Home</a><a href="/books/">Books</a><a href="/series/">Series</a><a href="/articles/">Articles</a><a href="/notes/">Notes</a><a href="/about/">About the author</a><h5 style="margin-top:21px">The house</h5><a href="/newsletter/">Newsletter</a><a href="/contact/">Contact</a><a href="/support/">Support</a><a href="/advertising/">Advertising</a></div></div><div class="fine">&copy; 2026 ID Luminescent Publishing · idluminescent.co.za</div></div></footer>
-<script>(function(){var b=document.querySelector('.menu-btn'),n=document.getElementById('mnav');if(!b)return;b.addEventListener('click',function(){var o=n.classList.toggle('open');b.setAttribute('aria-expanded',o)})})();</script>
+<script>
+(function () {
+  var button = document.querySelector('.menu-btn');
+  var menu = document.getElementById('mnav');
+  if (!button || !menu) return;
+
+  button.addEventListener('click', function () {
+    var isOpen = menu.classList.toggle('open');
+    button.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  menu.addEventListener('click', function (event) {
+    if (!event.target.closest('a')) return;
+    menu.classList.remove('open');
+    button.setAttribute('aria-expanded', 'false');
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape' || !menu.classList.contains('open')) return;
+    menu.classList.remove('open');
+    button.setAttribute('aria-expanded', 'false');
+    button.focus();
+  });
+})();
+</script>
 </body>
 </html>

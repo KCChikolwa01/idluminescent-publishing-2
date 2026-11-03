@@ -4,12 +4,15 @@
 #ebooks .cover .ct,
 #audiobooks .cover .ct,
 #paperbacks .cover .ct,
+.feature .cover .ct,
 #ebooks .cover .cs,
 #audiobooks .cover .cs,
 #paperbacks .cover .cs,
+.feature .cover .cs,
 #ebooks .cover .cb,
 #audiobooks .cover .cb,
-#paperbacks .cover .cb {
+#paperbacks .cover .cb,
+.feature .cover .cb {
   display: none;
 }
 

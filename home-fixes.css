@@ -1,19 +1,10 @@
-/* Homepage book covers use the actual jacket art; hide duplicate title/author overlays. */
+/* Homepage cover images already include their printed titles and author names. */
 .cover img.real { z-index: 0; }
 .cover > :not(img.real) { position: relative; z-index: 2; }
-#ebooks .cover .ct,
-#audiobooks .cover .ct,
-#paperbacks .cover .ct,
-.feature .cover .ct,
-#ebooks .cover .cs,
-#audiobooks .cover .cs,
-#paperbacks .cover .cs,
-.feature .cover .cs,
-#ebooks .cover .cb,
-#audiobooks .cover .cb,
-#paperbacks .cover .cb,
-.feature .cover .cb {
-  display: none;
+.cover .ct,
+.cover .cs,
+.cover .cb {
+  display: none !important;
 }
 
 /* Match the three homepage shelves' requested grid proportions on narrow screens. */

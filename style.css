@@ -76,6 +76,54 @@ a { color: inherit; }
 .btn-block { width: 100%; }
 .nav a.btn, .nav a.btn:hover { color: #f6f1e6; }
 
+.btn[href*="amazon.com"],
+.btn[href*="kobo.com"],
+.btn[href*="elevenreader.io"],
+.btn[href*="books.apple.com"] {
+  padding-left: 2.9em;
+  position: relative;
+}
+
+.btn[href*="amazon.com"]::before,
+.btn[href*="kobo.com"]::before,
+.btn[href*="elevenreader.io"]::before,
+.btn[href*="books.apple.com"]::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 1.3em;
+  height: 1.3em;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.04em;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.4);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
+}
+
+.btn[href*="amazon.com"]::before { content: "A"; color: #fff; }
+.btn[href*="kobo.com"]::before { content: "K"; color: #fff; }
+.btn[href*="elevenreader.io"]::before { content: "E"; color: #fff; }
+.btn[href*="books.apple.com"]::before { content: ""; font-size: 14px; color: #fff; }
+
+.btn-line[href*="amazon.com"]::before,
+.btn-line[href*="kobo.com"]::before,
+.btn-line[href*="elevenreader.io"]::before,
+.btn-line[href*="books.apple.com"]::before {
+  background: rgba(43,38,34,.05);
+  border-color: rgba(43,38,34,.25);
+  color: var(--ink);
+}
+
+.btn[href*="amazon.com"][href*="kobo.com"]::before { content: ""; }
+
 /* ---------- publication header ---------- */
 .mast { padding: var(--s5) 0 var(--s4); border-bottom: 1px solid var(--line); background: var(--paper); }
 .mast-grid { display: grid; grid-template-columns: 1.618fr 1fr; gap: var(--s5); align-items: center; }

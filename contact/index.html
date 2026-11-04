@@ -7,32 +7,78 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,800;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css"></head><body><header class="bar"><div class="wrap"><a class="brand" href="/index.html" aria-label="ID Luminescent Publishing, home"><img src="/brand/mark.jpg" alt=""><span>ID LUMINESCENT<small>Publishing</small></span></a>
-<nav class="nav" aria-label="Primary"><a href="/books/">Books</a><a href="/series/">Series</a><a href="/articles/">Articles</a><a href="/notes/">Notes</a><a href="/about/">About</a><a class="btn btn-glow btn-sm" href="/index.html#shop">Shop now</a></nav>
+<link rel="stylesheet" href="/style.css">
+<style>
+.contact-list { list-style: none; padding: 0; margin: 0 0 var(--s4); display: grid; gap: 13px; }
+.contact-list a.social {
+  display: flex; align-items: center; gap: 14px;
+  text-decoration: none; color: var(--ink);
+  padding: 14px 18px; border: 1px solid var(--line);
+  border-radius: 16px; background: #fbf8f0;
+  font-family: var(--sans); font-weight: 600; font-size: 16px;
+  transition: border-color .15s, background .15s;
+}
+.contact-list a.social:hover { border-color: var(--sun); background: var(--wash); color: var(--flame); }
+.contact-list a.social svg { width: 28px; height: 28px; flex-shrink: 0; fill: currentColor; }
+.contact-list a.social span.label { font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 2px; }
+.contact-list a.social span.value { font-size: 16px; font-weight: 600; color: inherit; }
+</style>
+</head><body><header class="bar"><div class="wrap"><a class="brand" href="/index.html" aria-label="ID Luminescent Publishing, home"><img src="/brand/mark.jpg" alt=""><span>ID LUMINESCENT<small>Publishing</small></span></a>
+<nav class="nav" aria-label="Primary"><a href="/books/">Books</a><a href="/series/">Series</a><a href="/articles/">Articles</a><a href="/notes/">Notes</a><a href="/newsletter/">Newsletter</a><a href="/about/">About</a><a class="btn btn-glow btn-sm" href="/index.html#shop">Shop now</a></nav>
 <button class="menu-btn" aria-controls="mnav" aria-expanded="false" type="button">Menu</button></div>
-<nav id="mnav" aria-label="Mobile"><a href="/index.html">Home</a><a href="/books/">Books</a><a href="/series/">Series</a><a href="/articles/">Articles</a><a href="/notes/">Notes</a><a href="/about/">About</a><a href="/index.html#shop" style="color:var(--flame)">Shop now</a></nav></header>
+<nav id="mnav" aria-label="Mobile"><a href="/index.html">Home</a><a href="/books/">Books</a><a href="/series/">Series</a><a href="/articles/">Articles</a><a href="/notes/">Notes</a><a href="/newsletter/">Newsletter</a><a href="/about/">About</a><a href="/index.html#shop" style="color:var(--flame)">Shop now</a></nav></header>
 <section class="pagehead"><div class="wrap">
 <p class="kicker">Contact</p>
 <h1>Write to the house</h1>
 <p>For a reader, a bookseller, or an editor. This page does not collect messages on the website.</p>
 </div></section>
 <div class="prose">
-<h2>Email</h2>
-<p><a href="mailto:info@idluminescent.co.za"><b>info@idluminescent.co.za</b></a></p>
+<ul class="contact-list">
 
-<h2>WhatsApp</h2>
-<p>Message Chikolwa on WhatsApp.</p>
-<p><a class="btn btn-glow" href="https://wa.me/27843257332" target="_blank" rel="noopener">Open WhatsApp &rarr;</a></p>
+<li>
+  <a class="social" href="mailto:info@idluminescent.co.za">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+    <span><span class="label">Email</span><span class="value">info@idluminescent.co.za</span></span>
+  </a>
+</li>
 
-<h2>Elsewhere</h2>
-<ul class="plain">
-<li><b>X:</b> <a href="https://x.com/series626271" target="_blank" rel="noopener">@series626271</a></li>
-<li><b>TikTok:</b> <a href="https://www.tiktok.com/@idluminecent.co.za" target="_blank" rel="noopener">@idluminecent.co.za</a></li>
-<li><b>Substack:</b> <a href="https://substack.com/@id12401763" target="_blank" rel="noopener">Read on Substack</a></li>
-<li><b>Medium:</b> <a href="https://medium.com/@kcnchikolwa" target="_blank" rel="noopener">Stories by KC Chikolwa</a></li>
+<li>
+  <a class="social" href="https://wa.me/27843257332" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.39-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24zm4.52 10.4c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.3.19-.55.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.3.37-.44.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.42h-.48c-.17 0-.43.06-.66.31-.22.25-.87.85-.87 2.07 0 1.22.89 2.39 1.01 2.56.12.17 1.75 2.67 4.23 3.74 2.49 1.08 2.49.72 2.94.67.45-.05 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.07-.1-.22-.16-.47-.28z"/></svg>
+    <span><span class="label">WhatsApp</span><span class="value">Message Chikolwa</span></span>
+  </a>
+</li>
+
+<li>
+  <a class="social" href="https://x.com/series626271" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    <span><span class="label">X</span><span class="value">@series626271</span></span>
+  </a>
+</li>
+
+<li>
+  <a class="social" href="https://www.tiktok.com/@idluminecent.co.za" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .56.04.82.12V9.01a6.27 6.27 0 0 0-.82-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.84 4.84 0 0 1-1.02-.05z"/></svg>
+    <span><span class="label">TikTok</span><span class="value">@idluminecent.co.za</span></span>
+  </a>
+</li>
+
+<li>
+  <a class="social" href="https://substack.com/@id12401763" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/></svg>
+    <span><span class="label">Substack</span><span class="value">Read on Substack</span></span>
+  </a>
+</li>
+
+<li>
+  <a class="social" href="https://medium.com/@kcnchikolwa" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.54 12a6.8 6.8 0 0 1-6.77 6.82A6.8 6.8 0 0 1 0 12a6.8 6.8 0 0 1 6.77-6.82A6.8 6.8 0 0 1 13.54 12zM20.96 12c0 3.54-1.51 6.41-3.38 6.41-1.87 0-3.39-2.87-3.39-6.41s1.52-6.41 3.39-6.41c1.87 0 3.38 2.87 3.38 6.41zM24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>
+    <span><span class="label">Medium</span><span class="value">Stories by KC Chikolwa</span></span>
+  </a>
+</li>
+
 </ul>
-
-<p style="margin-top:34px"><a class="btn btn-line" href="/index.html">Back to the home page</a></p>
+<p><a class="btn btn-line" href="/index.html">Back to the home page</a></p>
 </div>
 <footer class="foot"><div class="wrap"><div class="foot-grid"><div>
 <img src="/brand/lockup.jpg" alt="ID Luminescent Publishing" style="width:210px;border-radius:13px;margin-bottom:21px">

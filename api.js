@@ -176,6 +176,8 @@
       + ".api-promo a{display:inline-block;background:#f6f1e6;color:#2b2622;text-decoration:none;font-family:Inter,Arial,sans-serif;font-weight:800;font-size:14px;padding:8px 12px;border-radius:999px}"
       + ".post .api-thumb{border-radius:13px;overflow:hidden;background:#efe8da;min-height:120px}"
       + ".post .api-thumb img{width:100%;height:100%;object-fit:cover;aspect-ratio:1.618/1;display:block}"
+      + ".api-share{appearance:none;font-family:var(--sans,Inter,Arial,sans-serif);font-size:13px;font-weight:800;color:var(--flame,#8a5a32);background:transparent;border:1px solid var(--line,#c4b39a);border-radius:999px;padding:7px 14px;margin-top:12px;cursor:pointer}"
+      + ".api-share:hover{background:var(--wash,#f6f1e6)}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }
@@ -244,6 +246,72 @@
     parent.appendChild(card);
   }
 
+  function articleShareUrl(it) {
+    var path = articleHref(it);
+    if (!path) return "https://idluminescent.co.za/articles/";
+    return "https://idluminescent.co.za" + path;
+  }
+
+  function noteAnchor(it) {
+    var slug = String(it.slug || "").trim().toLowerCase();
+    if (slug) return slug;
+    if (it.id != null) return "note-" + String(it.id);
+    return "";
+  }
+
+  function noteShareUrl(it) {
+    var anchor = noteAnchor(it);
+    return "https://idluminescent.co.za/notes/" + (anchor ? "#" + anchor : "");
+  }
+
+  function addShareButton(parent, it, url) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "api-share";
+    btn.textContent = "Share";
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var payload = {
+        title: String(it.title || "ID Luminescent Publishing"),
+        text: String(it.excerpt || it.title || "").trim(),
+        url: url
+      };
+      if (navigator.share) {
+        navigator.share(payload).catch(function (err) {
+          if (err && err.name === "AbortError") return;
+          copyShareLink(btn, url);
+        });
+        return;
+      }
+      copyShareLink(btn, url);
+    });
+    parent.appendChild(btn);
+  }
+
+  function copyShareLink(btn, url) {
+    var done = function () {
+      btn.textContent = "Link copied";
+      setTimeout(function () { btn.textContent = "Share"; }, 2000);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(function () {
+        window.prompt("Copy this link", url);
+      });
+      return;
+    }
+    window.prompt("Copy this link", url);
+  }
+
+  function focusSharedNote() {
+    var hash = "";
+    try { hash = decodeURIComponent((location.hash || "").replace(/^#/, "")); }
+    catch (e) { hash = (location.hash || "").replace(/^#/, ""); }
+    if (!hash) return;
+    var node = document.getElementById(hash);
+    if (node && node.scrollIntoView) node.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   /* ---------- notes ---------- */
   function renderNotes(box, items) {
     box.textContent = "";
@@ -251,6 +319,8 @@
     box.appendChild(head);
     items.forEach(function (it) {
       var art = el("article", "api-note");
+      var anchor = noteAnchor(it);
+      if (anchor) art.id = anchor;
       art.appendChild(el("h3", null, it.title));
       var meta = metaLine(it);
       if (meta) art.appendChild(meta);
@@ -265,8 +335,10 @@
         linkify(body, content);
         art.appendChild(body);
       }
+      addShareButton(art, it, noteShareUrl(it));
       box.appendChild(art);
     });
+    focusSharedNote();
   }
 
   function initNotes(box) {
@@ -301,10 +373,18 @@
     box.appendChild(head);
     items.forEach(function (it) {
       var href = articleHref(it);
-      var a = el("a", "post");
-      if (href) a.href = href;
+      var card = el("div", "post");
       var left = el("div");
-      left.appendChild(el("h3", null, it.title));
+      if (href) {
+        var titleLink = document.createElement("a");
+        titleLink.href = href;
+        titleLink.style.textDecoration = "none";
+        titleLink.style.color = "inherit";
+        titleLink.appendChild(el("h3", null, it.title));
+        left.appendChild(titleLink);
+      } else {
+        left.appendChild(el("h3", null, it.title));
+      }
       var ex = String(it.excerpt || "").trim();
       if (!ex && it.content) {
         ex = String(it.content).trim().replace(/\s+/g, " ");
@@ -313,7 +393,8 @@
       if (ex) left.appendChild(el("p", null, ex));
       var meta = metaLine(it);
       if (meta) left.appendChild(meta);
-      a.appendChild(left);
+      addShareButton(left, it, articleShareUrl(it));
+      card.appendChild(left);
       var pics = imageList(it);
       if (pics.length) {
         var thumb = el("div", "api-thumb");
@@ -322,9 +403,9 @@
         img.alt = "";
         img.loading = "lazy";
         thumb.appendChild(img);
-        a.appendChild(thumb);
+        card.appendChild(thumb);
       }
-      box.appendChild(a);
+      box.appendChild(card);
     });
   }
 
@@ -379,6 +460,7 @@
       if (d) who.appendChild(document.createTextNode(" · " + d));
       by.appendChild(who);
       box.appendChild(by);
+      addShareButton(box, it, articleShareUrl(it));
       appendImages(box, it);
       var body = el("div", "api-text api-article");
       linkify(body, it.content || "");

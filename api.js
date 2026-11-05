@@ -1,9 +1,10 @@
-/* ID Luminescent Publishing: public API connection (notes and articles).
+/* ID Luminescent Publishing: public API connection (notes, articles, newsletter letters).
    API base: https://api.idluminescent.co.za/
    Public endpoints:
      /api/public/notes
      /api/public/articles
      /api/public/reflections
+     /api/public/newsletter   (same letters)
    All API text is written with textContent / createTextNode only (no innerHTML). */
 (function () {
   "use strict";
@@ -11,7 +12,8 @@
   var ENDPOINTS = {
     notes: API + "api/public/notes",
     articles: API + "api/public/articles",
-    reflections: API + "api/public/reflections"
+    reflections: API + "api/public/reflections",
+    newsletter: API + "api/public/newsletter"
   };
 
   /* Manually written pieces that already exist on the site: never repeated from the API. */
@@ -161,6 +163,87 @@
     return span;
   }
 
+  function ensureStyles() {
+    if (document.getElementById("api-extra-style")) return;
+    var s = document.createElement("style");
+    s.id = "api-extra-style";
+    s.textContent = ".api-photo{display:block;width:100%;max-height:540px;object-fit:cover;border-radius:13px;margin:0 0 16px;background:#efe8da}"
+      + ".api-promo{display:grid;grid-template-columns:112px 1fr;gap:16px;align-items:center;margin-top:22px;padding:16px 18px;border-radius:18px;background:#3a332c;color:#f6f1e6}"
+      + ".api-promo-cover{width:112px;height:168px;object-fit:cover;border-radius:8px;background:#efe8da}"
+      + ".api-promo h4{font-size:22px;margin:0 0 6px;line-height:1.2;color:#f6f1e6}"
+      + ".api-promo p{margin:0 0 10px;color:#f6f1e6;font-size:16px;line-height:1.45}"
+      + ".api-promo-kicker{font-family:Inter,Arial,sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:#e7c27a;margin:0 0 6px}"
+      + ".api-promo a{display:inline-block;background:#f6f1e6;color:#2b2622;text-decoration:none;font-family:Inter,Arial,sans-serif;font-weight:800;font-size:14px;padding:8px 12px;border-radius:999px}"
+      + ".post .api-thumb{border-radius:13px;overflow:hidden;background:#efe8da;min-height:120px}"
+      + ".post .api-thumb img{width:100%;height:100%;object-fit:cover;aspect-ratio:1.618/1;display:block}"
+      + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
+    document.head.appendChild(s);
+  }
+
+  function safeHttpUrl(value) {
+    try {
+      var u = new URL(String(value || "").trim());
+      if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+      return u.href;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function imageList(it) {
+    var urls = [];
+    var source = it && Array.isArray(it.images) ? it.images : [];
+    if (!source.length && it && it.image_url) source = [it.image_url];
+    source.forEach(function (raw) {
+      var href = safeHttpUrl(raw);
+      if (href && urls.indexOf(href) === -1) urls.push(href);
+    });
+    return urls;
+  }
+
+  function appendImages(parent, it) {
+    imageList(it).forEach(function (href) {
+      var img = document.createElement("img");
+      img.className = "api-photo";
+      img.src = href;
+      img.alt = "";
+      img.loading = "lazy";
+      parent.appendChild(img);
+    });
+  }
+
+  function appendPromo(parent, promo) {
+    if (!promo || typeof promo !== "object") return;
+    var title = String(promo.title || "").trim();
+    var text = String(promo.text || promo.description || "").trim();
+    var url = safeHttpUrl(promo.url);
+    var cover = safeHttpUrl(promo.cover_image || promo.image);
+    if (!title && !text && !cover && !url) return;
+    var card = el("aside", "api-promo");
+    if (cover) {
+      var img = document.createElement("img");
+      img.src = cover;
+      img.alt = "";
+      img.className = "api-promo-cover";
+      img.loading = "lazy";
+      card.appendChild(img);
+    }
+    var copy = el("div");
+    copy.appendChild(el("p", "api-promo-kicker", "From the shelf"));
+    if (title) copy.appendChild(el("h4", null, title));
+    if (text) copy.appendChild(el("p", null, text));
+    if (url) {
+      var a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "Read this book";
+      copy.appendChild(a);
+    }
+    card.appendChild(copy);
+    parent.appendChild(card);
+  }
+
   /* ---------- notes ---------- */
   function renderNotes(box, items) {
     box.textContent = "";
@@ -171,6 +254,7 @@
       art.appendChild(el("h3", null, it.title));
       var meta = metaLine(it);
       if (meta) art.appendChild(meta);
+      appendImages(art, it);
       var excerpt = String(it.excerpt || "").trim();
       var content = String(it.content || "").trim();
       if (excerpt && !(content && content.indexOf(excerpt) === 0)) {
@@ -187,7 +271,11 @@
 
   function initNotes(box) {
     setStatus(box, "Loading more notes…", false);
-    fetchItems(ENDPOINTS.notes).then(function (items) {
+    fetchItems(ENDPOINTS.notes).catch(function (err) {
+      var msg = String((err && (err.apiError || err.message)) || "").toLowerCase();
+      if (err && (err.status === 404 || msg.indexOf("unknown") !== -1)) return fetchItems(API + "api/public/note");
+      throw err;
+    }).then(function (items) {
       var more = dedupe(items, "notes").sort(byNewest);
       if (!more.length) {
         setStatus(box, "No additional notes have been published yet. Check back soon.", false);
@@ -226,13 +314,27 @@
       var meta = metaLine(it);
       if (meta) left.appendChild(meta);
       a.appendChild(left);
+      var pics = imageList(it);
+      if (pics.length) {
+        var thumb = el("div", "api-thumb");
+        var img = document.createElement("img");
+        img.src = pics[0];
+        img.alt = "";
+        img.loading = "lazy";
+        thumb.appendChild(img);
+        a.appendChild(thumb);
+      }
       box.appendChild(a);
     });
   }
 
   function initArticles(box) {
     setStatus(box, "Loading more articles…", false);
-    fetchItems(ENDPOINTS.articles).then(function (items) {
+    fetchItems(ENDPOINTS.articles).catch(function (err) {
+      var msg = String((err && (err.apiError || err.message)) || "").toLowerCase();
+      if (err && (err.status === 404 || msg.indexOf("unknown") !== -1)) return fetchItems(API + "api/public/article");
+      throw err;
+    }).then(function (items) {
       var more = dedupe(items, "articles").sort(byNewest);
       if (!more.length) {
         setStatus(box, "No additional articles have been published yet. Check back soon.", false);
@@ -277,9 +379,11 @@
       if (d) who.appendChild(document.createTextNode(" · " + d));
       by.appendChild(who);
       box.appendChild(by);
+      appendImages(box, it);
       var body = el("div", "api-text api-article");
       linkify(body, it.content || "");
       box.appendChild(body);
+      appendPromo(box, it.book_promo);
     }).catch(function (err) {
       box.textContent = "";
       var back = el("a", "crumb", "← Articles");
@@ -293,29 +397,35 @@
   /* ---------- reflections (optional; only if a page requests it) ---------- */
   function renderReflections(box, items) {
     box.textContent = "";
-    var head = el("p", "label", "Reflections");
+    var head = el("p", "label", "Letters");
     box.appendChild(head);
     items.forEach(function (it) {
       var art = el("article", "api-note");
       art.appendChild(el("h3", null, it.title));
       var meta = metaLine(it);
       if (meta) art.appendChild(meta);
+      appendImages(art, it);
       var content = String(it.content || it.excerpt || "").trim();
       if (content) {
         var body = el("div", "api-text");
         linkify(body, content);
         art.appendChild(body);
       }
+      appendPromo(art, it.book_promo);
       box.appendChild(art);
     });
   }
 
   function initReflections(box) {
-    setStatus(box, "Loading reflections…", false);
-    fetchItems(ENDPOINTS.reflections).then(function (items) {
+    setStatus(box, "Loading letters…", false);
+    fetchItems(ENDPOINTS.reflections).catch(function (err) {
+      var msg = String((err && (err.apiError || err.message)) || "").toLowerCase();
+      if (err && (err.status === 404 || msg.indexOf("unknown") !== -1)) return fetchItems(ENDPOINTS.newsletter);
+      throw err;
+    }).then(function (items) {
       var more = dedupe(items, "reflections").sort(byNewest);
       if (!more.length) {
-        setStatus(box, "No reflections have been published yet. Check back soon.", false);
+        setStatus(box, "No letters have been published yet. Check back soon.", false);
         return;
       }
       renderReflections(box, more);
@@ -326,6 +436,7 @@
 
   var mode = window.API_MODE, box = document.getElementById("api-box");
   if (!box) return;
+  ensureStyles();
   if (mode === "notes") initNotes(box);
   else if (mode === "articles") initArticles(box);
   else if (mode === "article") initReader(box);

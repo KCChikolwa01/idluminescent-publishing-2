@@ -361,3 +361,6 @@ a { color: inherit; }
   object-position: center top;
   z-index: 3;
                     }
+/* share */
+.share-row { margin: var(--s2) 0 var(--s3); }
+.share-row .btn { cursor: pointer; }

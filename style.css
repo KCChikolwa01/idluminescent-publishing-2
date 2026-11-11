@@ -391,7 +391,38 @@ a { color: inherit; }
 .api-text a { color: var(--flame); }
 .api-article { font-size: 21px; }
 .api-list > .label { font-family: var(--sans); font-size: 13px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--soft); margin: 0 0 var(--s2); display: flex; align-items: center; gap: var(--s2); }
-.api-list > .label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.api-list > .label::after { content: "";/* Subheadings in notes, articles, newsletter (API content) */
+.api-text h2,
+.api-article h2,
+.api-note h2,
+.post-page h2,
+.prose h2 {
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.2;
+  margin: var(--s4) 0 var(--s2);
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+
+.api-text h3,
+.api-article h3,
+.api-note h3,
+.post-page h3,
+.prose h3 {
+  font-weight: 800;
+  font-size: 21px;
+  line-height: 1.25;
+  margin: var(--s3) 0 var(--s1);
+  color: var(--ink);
+}
+
+.api-text strong,
+.api-article strong,
+.api-note strong,
+.post-page strong {
+  font-weight: 800;
+                    } flex: 1; height: 1px; background: var(--line); }
 
 /* Hide fallback title/author when a real cover image is showing */
 .cover:has(img.real) .ct,

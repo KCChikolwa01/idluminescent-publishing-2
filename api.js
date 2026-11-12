@@ -329,6 +329,60 @@
     return ex;
   }
 
+  function firstPicture(it) {
+    var list = imageList(it);
+    return list.length ? list[0] : "";
+  }
+
+  function pictureName(url, type) {
+    var clean = String(url || "").split("?")[0];
+    var name = clean.split("/").pop() || "picture";
+    if (!/\.(png|jpe?g|webp|gif)$/i.test(name)) {
+      name += type === "image/png" ? ".png" : ".jpg";
+    }
+    return name;
+  }
+
+  function loadPicture(url) {
+    return fetch(url, { mode: "cors" }).then(function (res) {
+      if (!res.ok) throw new Error("picture");
+      return res.blob();
+    }).then(function (blob) {
+      var type = blob.type && blob.type.indexOf("image/") === 0 ? blob.type : "image/jpeg";
+      if (type !== "image/png" && type !== "image/jpeg" && type !== "image/webp" && type !== "image/gif") type = "image/jpeg";
+      return new File([blob], pictureName(url, type), { type: type });
+    });
+  }
+
+  function applyShareMeta(it) {
+    try {
+      var title = String(it.title || "ID Luminescent Publishing");
+      var description = String(it.excerpt || it.title || "").trim();
+      var picture = firstPicture(it);
+      document.title = title + " — ID Luminescent Publishing";
+      var pairs = [
+        ["property", "og:title", title],
+        ["property", "og:description", description],
+        ["property", "og:url", location.href],
+        ["name", "description", description]
+      ];
+      if (picture) {
+        pairs.push(["property", "og:image", picture]);
+        pairs.push(["name", "twitter:image", picture]);
+      }
+      pairs.forEach(function (pair) {
+        if (!pair[2]) return;
+        var node = document.querySelector('meta[' + pair[0] + '="' + pair[1] + '"]');
+        if (!node) {
+          node = document.createElement("meta");
+          node.setAttribute(pair[0], pair[1]);
+          document.head.appendChild(node);
+        }
+        node.setAttribute("content", pair[2]);
+      });
+    } catch (e) { /* ignore meta updates */ }
+  }
+
   function addShareButton(parent, it, url) {
     var btn = document.createElement("button");
     btn.type = "button";
@@ -337,35 +391,69 @@
     btn.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
+      var picture = firstPicture(it);
       var payload = {
         title: String(it.title || "ID Luminescent Publishing"),
         text: String(it.excerpt || it.title || "").trim(),
         url: url
       };
-      if (navigator.share) {
-        navigator.share(payload).catch(function (err) {
+      if (navigator.share && picture) {
+        loadPicture(picture).then(function (file) {
+          var withFile = {
+            title: payload.title,
+            text: payload.text,
+            url: payload.url,
+            files: [file]
+          };
+          if (navigator.canShare && !navigator.canShare(withFile)) throw new Error("no-file-share");
+          return navigator.share(withFile);
+        }).catch(function (err) {
           if (err && err.name === "AbortError") return;
-          copyShareLink(btn, url);
+          navigator.share(payload).catch(function (err2) {
+            if (err2 && err2.name === "AbortError") return;
+            copyShareLink(btn, url, picture);
+          });
         });
         return;
       }
-      copyShareLink(btn, url);
+      if (navigator.share) {
+        navigator.share(payload).catch(function (err) {
+          if (err && err.name === "AbortError") return;
+          copyShareLink(btn, url, picture);
+        });
+        return;
+      }
+      copyShareLink(btn, url, picture);
     });
     parent.appendChild(btn);
   }
 
-  function copyShareLink(btn, url) {
-    var done = function () {
-      btn.textContent = "Link copied";
+  function copyShareLink(btn, url, picture) {
+    var done = function (label) {
+      btn.textContent = label || "Link copied";
       setTimeout(function () { btn.textContent = "Share"; }, 2000);
     };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(done).catch(function () {
-        window.prompt("Copy this link", url);
-      });
+    var writeText = function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () { done("Link copied"); }).catch(function () {
+          window.prompt("Copy this link", url);
+        });
+        return;
+      }
+      window.prompt("Copy this link", url);
+    };
+    if (!(picture && navigator.clipboard && navigator.clipboard.write && window.ClipboardItem)) {
+      writeText();
       return;
     }
-    window.prompt("Copy this link", url);
+    loadPicture(picture).then(function (file) {
+      var type = file.type === "image/png" ? "image/png" : "image/jpeg";
+      var data = { "text/plain": new Blob([url], { type: "text/plain" }) };
+      data[type] = file;
+      return navigator.clipboard.write([new ClipboardItem(data)]);
+    }).then(function () {
+      done("Link and picture copied");
+    }).catch(writeText);
   }
 
   /* ---------- notes: list = preview only; full text on /notes/read/ ---------- */
@@ -486,20 +574,7 @@
       addShareButton(box, it, noteShareUrl(it));
       appendPlaced(box, it.content || "", placementList(it));
       appendPromo(box, it.book_promo);
-      try {
-        document.title = String(it.title || "Note") + " — ID Luminescent Publishing";
-        var ogTitle = document.querySelector('meta[property="og:title"]');
-        if (ogTitle) ogTitle.setAttribute("content", String(it.title || "Note"));
-        var ogDesc = document.querySelector('meta[property="og:description"]');
-        if (ogDesc && ex) ogDesc.setAttribute("content", ex);
-        var pic = imageList(it)[0];
-        if (pic) {
-          var ogImage = document.querySelector('meta[property="og:image"]');
-          if (ogImage) ogImage.setAttribute("content", pic);
-          var twImage = document.querySelector('meta[name="twitter:image"]');
-          if (twImage) twImage.setAttribute("content", pic);
-        }
-      } catch (e) { /* ignore meta updates */ }
+      applyShareMeta(it);
     }).catch(function (err) {
       box.textContent = "";
       var back = el("a", "crumb", "← Notes");
@@ -618,9 +693,7 @@
       addShareButton(box, it, articleShareUrl(it));
       appendPlaced(box, it.content || "", placementList(it).slice(0, 2));
       appendPromo(box, it.book_promo);
-      try {
-        document.title = String(it.title || "Article") + " — ID Luminescent Publishing";
-      } catch (e) { /* ignore */ }
+      applyShareMeta(it);
     }).catch(function (err) {
       box.textContent = "";
       var back = el("a", "crumb", "← Articles");
@@ -632,20 +705,42 @@
   }
 
   /* ---------- reflections / newsletter letters ---------- */
+  function letterShareUrl(it) {
+    var slug = String(it.slug || "").trim();
+    if (slug) return "https://idluminescent.co.za/newsletter/?slug=" + encodeURIComponent(slug);
+    if (it.id != null) return "https://idluminescent.co.za/newsletter/?id=" + encodeURIComponent(String(it.id));
+    return "https://idluminescent.co.za/newsletter/";
+  }
+
   function renderReflections(box, items) {
     box.textContent = "";
     var head = el("p", "label", "Letters");
     box.appendChild(head);
+    var params = new URLSearchParams(location.search || "");
+    var wantedSlug = params.get("slug") || "";
+    var wantedId = params.get("id") || "";
     items.forEach(function (it) {
       var art = el("article", "api-note");
+      if ((wantedSlug && String(it.slug || "") === wantedSlug) || (wantedId && String(it.id) === wantedId)) {
+        art.id = "shared-letter";
+      }
       art.appendChild(el("h3", null, it.title));
       var meta = metaLine(it);
       if (meta) art.appendChild(meta);
       var letter = String(it.content || it.excerpt || "").trim();
       appendPlaced(art, letter, placementList(it).slice(0, 1));
       appendPromo(art, it.book_promo);
+      addShareButton(art, it, letterShareUrl(it));
       box.appendChild(art);
     });
+    var shared = document.getElementById("shared-letter");
+    if (shared) {
+      var match = items.filter(function (it) {
+        return (wantedSlug && String(it.slug || "") === wantedSlug) || (wantedId && String(it.id) === wantedId);
+      })[0];
+      if (match) applyShareMeta(match);
+      shared.scrollIntoView({ block: "start" });
+    }
   }
 
   function initReflections(box) {

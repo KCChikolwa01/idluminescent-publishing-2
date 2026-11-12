@@ -5,6 +5,8 @@
      /api/public/articles
      /api/public/reflections
      /api/public/newsletter   (same letters)
+   Notes list shows title + excerpt only; full note opens at /notes/read/?slug=…
+   Articles list opens at /articles/read/?slug=…
    All API text is written with textContent / createTextNode only (no innerHTML). */
 (function () {
   "use strict";
@@ -175,10 +177,11 @@
       + ".api-promo p{margin:0 0 10px;color:#f6f1e6;font-size:16px;line-height:1.45}"
       + ".api-promo-kicker{font-family:Inter,Arial,sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:#e7c27a;margin:0 0 6px}"
       + ".api-promo a{display:inline-block;background:#f6f1e6;color:#2b2622;text-decoration:none;font-family:Inter,Arial,sans-serif;font-weight:800;font-size:14px;padding:8px 12px;border-radius:999px}"
-      + ".post .api-thumb{border-radius:13px;overflow:hidden;background:#efe8da;min-height:120px}"
+      + ".post .api-thumb{border-radius:13px;overflow:hidden;background:#efe8da;min-height:120px;display:block;text-decoration:none}"
       + ".post .api-thumb img{width:100%;height:100%;object-fit:cover;aspect-ratio:1.618/1;display:block}"
       + ".api-share{appearance:none;font-family:var(--sans,Inter,Arial,sans-serif);font-size:13px;font-weight:800;color:var(--flame,#8a5a32);background:transparent;border:1px solid var(--line,#c4b39a);border-radius:999px;padding:7px 14px;margin-top:12px;cursor:pointer}"
       + ".api-share:hover{background:var(--wash,#f6f1e6)}"
+      + ".post .btn{margin-top:10px}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }
@@ -317,22 +320,13 @@
     parent.appendChild(card);
   }
 
-  function articleShareUrl(it) {
-    var path = articleHref(it);
-    if (!path) return "https://idluminescent.co.za/articles/";
-    return "https://idluminescent.co.za" + path;
-  }
-
-  function noteAnchor(it) {
-    var slug = String(it.slug || "").trim().toLowerCase();
-    if (slug) return slug;
-    if (it.id != null) return "note-" + String(it.id);
-    return "";
-  }
-
-  function noteShareUrl(it) {
-    var anchor = noteAnchor(it);
-    return "https://idluminescent.co.za/notes/" + (anchor ? "#" + anchor : "");
+  function shortExcerpt(it) {
+    var ex = String(it.excerpt || "").trim();
+    if (!ex && it.content) {
+      ex = String(it.content).trim().replace(/\s+/g, " ");
+      if (ex.length > 220) ex = ex.slice(0, 217).replace(/\s+\S*$/, "") + "…";
+    }
+    return ex;
   }
 
   function addShareButton(parent, it, url) {
@@ -374,43 +368,65 @@
     window.prompt("Copy this link", url);
   }
 
-  function focusSharedNote() {
-    var hash = "";
-    try { hash = decodeURIComponent((location.hash || "").replace(/^#/, "")); }
-    catch (e) { hash = (location.hash || "").replace(/^#/, ""); }
-    if (!hash) return;
-    var node = document.getElementById(hash);
-    if (node && node.scrollIntoView) node.scrollIntoView({ behavior: "smooth", block: "start" });
+  /* ---------- notes: list = preview only; full text on /notes/read/ ---------- */
+  function noteHref(it) {
+    var slug = String(it.slug || "").trim();
+    if (slug) return "/notes/read/?slug=" + encodeURIComponent(slug);
+    if (it.id != null) return "/notes/read/?id=" + encodeURIComponent(String(it.id));
+    return "";
   }
 
-  /* ---------- notes ---------- */
+  function noteShareUrl(it) {
+    var path = noteHref(it);
+    if (!path) return "https://idluminescent.co.za/notes/";
+    return "https://idluminescent.co.za" + path;
+  }
+
   function renderNotes(box, items) {
     box.textContent = "";
     var head = el("p", "label", "More notes");
     box.appendChild(head);
     items.forEach(function (it) {
-      var art = el("article", "api-note");
-      var anchor = noteAnchor(it);
-      if (anchor) art.id = anchor;
-      art.appendChild(el("h3", null, it.title));
+      var href = noteHref(it);
+      var card = el("div", "post");
+      var left = el("div");
+      if (href) {
+        var titleLink = document.createElement("a");
+        titleLink.href = href;
+        titleLink.style.textDecoration = "none";
+        titleLink.style.color = "inherit";
+        titleLink.appendChild(el("h3", null, it.title));
+        left.appendChild(titleLink);
+      } else {
+        left.appendChild(el("h3", null, it.title));
+      }
+      var ex = shortExcerpt(it);
+      if (ex) left.appendChild(el("p", null, ex));
       var meta = metaLine(it);
-      if (meta) art.appendChild(meta);
-      var notePic = placementList(it)[0];
-      if (notePic) art.appendChild(makeFigure(notePic));
-      var excerpt = String(it.excerpt || "").trim();
-      var content = String(it.content || "").trim();
-      if (excerpt && !(content && content.indexOf(excerpt) === 0)) {
-        art.appendChild(el("p", "api-excerpt", excerpt));
+      if (meta) left.appendChild(meta);
+      if (href) {
+        var open = document.createElement("a");
+        open.href = href;
+        open.className = "btn btn-line btn-sm";
+        open.textContent = "Read note";
+        left.appendChild(open);
       }
-      if (content) {
-        var body = el("div", "api-text");
-        linkify(body, content);
-        art.appendChild(body);
+      addShareButton(left, it, noteShareUrl(it));
+      card.appendChild(left);
+      var pics = imageList(it);
+      if (pics.length) {
+        var thumbWrap = document.createElement(href ? "a" : "div");
+        if (href) thumbWrap.href = href;
+        thumbWrap.className = "api-thumb";
+        var img = document.createElement("img");
+        img.src = pics[0];
+        img.alt = "";
+        img.loading = "lazy";
+        thumbWrap.appendChild(img);
+        card.appendChild(thumbWrap);
       }
-      addShareButton(art, it, noteShareUrl(it));
-      box.appendChild(art);
+      box.appendChild(card);
     });
-    focusSharedNote();
   }
 
   function initNotes(box) {
@@ -431,12 +447,81 @@
     });
   }
 
+  function findItem(items, slug, id) {
+    var found = null;
+    items.forEach(function (row) {
+      if (found) return;
+      if (slug && String(row.slug || "") === slug) found = row;
+      else if (id && String(row.id) === String(id)) found = row;
+    });
+    return found;
+  }
+
+  function initNoteReader(box) {
+    var params = new URLSearchParams(location.search || "");
+    var slug = params.get("slug") || "";
+    var id = params.get("id") || "";
+    setStatus(box, "Loading the note…", false);
+    fetchItems(ENDPOINTS.notes).then(function (items) {
+      var it = findItem(items, slug, id);
+      if (!it) throw new Error("Note not found");
+      box.textContent = "";
+      var back = el("a", "crumb", "← Notes");
+      back.href = "/notes/";
+      box.appendChild(back);
+      box.appendChild(el("h1", null, it.title));
+      var ex = String(it.excerpt || "").trim();
+      if (ex) box.appendChild(el("p", "dek", ex));
+      var by = el("div", "byline");
+      var img = document.createElement("img");
+      img.src = "/brand/mark.jpg";
+      img.alt = "";
+      by.appendChild(img);
+      var who = el("div");
+      who.appendChild(el("b", null, "KC Chikolwa"));
+      var d = fmtDate(it.created_at || it.published_at);
+      if (d) who.appendChild(document.createTextNode(" · " + d));
+      by.appendChild(who);
+      box.appendChild(by);
+      addShareButton(box, it, noteShareUrl(it));
+      appendPlaced(box, it.content || "", placementList(it));
+      appendPromo(box, it.book_promo);
+      try {
+        document.title = String(it.title || "Note") + " — ID Luminescent Publishing";
+        var ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute("content", String(it.title || "Note"));
+        var ogDesc = document.querySelector('meta[property="og:description"]');
+        if (ogDesc && ex) ogDesc.setAttribute("content", ex);
+        var pic = imageList(it)[0];
+        if (pic) {
+          var ogImage = document.querySelector('meta[property="og:image"]');
+          if (ogImage) ogImage.setAttribute("content", pic);
+          var twImage = document.querySelector('meta[name="twitter:image"]');
+          if (twImage) twImage.setAttribute("content", pic);
+        }
+      } catch (e) { /* ignore meta updates */ }
+    }).catch(function (err) {
+      box.textContent = "";
+      var back = el("a", "crumb", "← Notes");
+      back.href = "/notes/";
+      box.appendChild(back);
+      box.appendChild(el("h1", null, "We could not load this note"));
+      box.appendChild(el("p", "dek", friendlyApiError(err, "notes")));
+    });
+  }
+
   /* ---------- articles ---------- */
   function articleHref(it) {
     var slug = String(it.slug || "").trim();
     if (slug) return "/articles/read/?slug=" + encodeURIComponent(slug);
     if (it.id != null) return "/articles/read/?id=" + encodeURIComponent(String(it.id));
     return "";
+  }
+
+  function articleShareUrl(it) {
+    var path = articleHref(it);
+    if (!path) return "https://idluminescent.co.za/articles/";
+    return "https://idluminescent.co.za" + path;
   }
 
   function renderArticles(box, items) {
@@ -457,25 +542,30 @@
       } else {
         left.appendChild(el("h3", null, it.title));
       }
-      var ex = String(it.excerpt || "").trim();
-      if (!ex && it.content) {
-        ex = String(it.content).trim().replace(/\s+/g, " ");
-        if (ex.length > 220) ex = ex.slice(0, 217).replace(/\s+\S*$/, "") + "…";
-      }
+      var ex = shortExcerpt(it);
       if (ex) left.appendChild(el("p", null, ex));
       var meta = metaLine(it);
       if (meta) left.appendChild(meta);
+      if (href) {
+        var open = document.createElement("a");
+        open.href = href;
+        open.className = "btn btn-line btn-sm";
+        open.textContent = "Read article";
+        left.appendChild(open);
+      }
       addShareButton(left, it, articleShareUrl(it));
       card.appendChild(left);
       var pics = imageList(it);
       if (pics.length) {
-        var thumb = el("div", "api-thumb");
+        var thumbWrap = document.createElement(href ? "a" : "div");
+        if (href) thumbWrap.href = href;
+        thumbWrap.className = "api-thumb";
         var img = document.createElement("img");
         img.src = pics[0];
         img.alt = "";
         img.loading = "lazy";
-        thumb.appendChild(img);
-        card.appendChild(thumb);
+        thumbWrap.appendChild(img);
+        card.appendChild(thumbWrap);
       }
       box.appendChild(card);
     });
@@ -499,25 +589,18 @@
     });
   }
 
-  /* ---------- single article reader ---------- */
   function initReader(box) {
-    var q = new URLSearchParams(location.search);
-    var slug = (q.get("slug") || "").toLowerCase(), id = q.get("id");
+    var params = new URLSearchParams(location.search || "");
+    var slug = params.get("slug") || "";
+    var id = params.get("id") || "";
     setStatus(box, "Loading the article…", false);
     fetchItems(ENDPOINTS.articles).then(function (items) {
-      var it = items.filter(function (x) {
-        return (slug && String(x.slug || "").toLowerCase() === slug) || (id && String(x.id) === id);
-      })[0];
+      var it = findItem(items, slug, id);
+      if (!it) throw new Error("Article not found");
       box.textContent = "";
       var back = el("a", "crumb", "← Articles");
       back.href = "/articles/";
       box.appendChild(back);
-      if (!it) {
-        box.appendChild(el("h1", null, "Article not found"));
-        box.appendChild(el("p", "dek", "That article may have moved or is not published. Please return to the articles page."));
-        return;
-      }
-      document.title = it.title + " — ID Luminescent Publishing";
       box.appendChild(el("h1", null, it.title));
       var ex = String(it.excerpt || "").trim();
       if (ex) box.appendChild(el("p", "dek", ex));
@@ -535,6 +618,9 @@
       addShareButton(box, it, articleShareUrl(it));
       appendPlaced(box, it.content || "", placementList(it).slice(0, 2));
       appendPromo(box, it.book_promo);
+      try {
+        document.title = String(it.title || "Article") + " — ID Luminescent Publishing";
+      } catch (e) { /* ignore */ }
     }).catch(function (err) {
       box.textContent = "";
       var back = el("a", "crumb", "← Articles");
@@ -545,7 +631,7 @@
     });
   }
 
-  /* ---------- reflections (optional; only if a page requests it) ---------- */
+  /* ---------- reflections / newsletter letters ---------- */
   function renderReflections(box, items) {
     box.textContent = "";
     var head = el("p", "label", "Letters");
@@ -586,5 +672,6 @@
   if (mode === "notes") initNotes(box);
   else if (mode === "articles") initArticles(box);
   else if (mode === "article") initReader(box);
+  else if (mode === "note") initNoteReader(box);
   else if (mode === "reflections") initReflections(box);
 })();

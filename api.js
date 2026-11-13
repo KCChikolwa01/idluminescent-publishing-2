@@ -229,10 +229,10 @@
       + ".api-listen:hover{background:#46301f}"
       + ".api-listen.is-on{background:#8a5a2b}"
       + ".api-listen[disabled]{opacity:.5;cursor:not-allowed}"
-       + ".api-open{appearance:none;background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%}"
-+ ".api-open h3{margin:0 0 4px}"
-+ ".api-full{margin-top:14px}"
-+ ".api-list .post .meta{display:block;clear:both;margin:8px 0 10px}"
+      + ".api-open{appearance:none;background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%}"
+      + ".api-open h3{margin:0 0 4px}"
+      + ".api-full{margin-top:14px}"
+      + ".api-list .post .meta{display:block;clear:both;margin:8px 0 10px}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }
@@ -498,6 +498,39 @@
     parent.appendChild(row);
   }
 
+  function openTitle(title) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "api-open";
+    button.setAttribute("aria-expanded", "false");
+    button.appendChild(el("h3", null, title));
+    return button;
+  }
+
+  function bindExpand(button, card, it, limit) {
+    var excerpt = null;
+    button.addEventListener("click", function () {
+      if (!excerpt) excerpt = card.querySelector(".api-excerpt");
+      var full = card.querySelector(".api-full");
+      if (full) {
+        var show = full.hasAttribute("hidden");
+        if (show) full.removeAttribute("hidden");
+        else full.setAttribute("hidden", "");
+        if (excerpt) excerpt.hidden = show;
+        button.setAttribute("aria-expanded", show ? "true" : "false");
+        return;
+      }
+      full = el("div", "api-full");
+      var pics = placementList(it);
+      if (limit != null) pics = pics.slice(0, limit);
+      appendPlaced(full, it.content || "", pics);
+      appendPromo(full, it.book_promo);
+      card.appendChild(full);
+      if (excerpt) excerpt.hidden = true;
+      button.setAttribute("aria-expanded", "true");
+    });
+  }
+
   /* ---------- notes: list = preview only; full text on /notes/read/ ---------- */
   function noteHref(it) {
     var slug = String(it.slug || "").trim();
@@ -517,37 +550,19 @@
     var head = el("p", "label", "More notes");
     box.appendChild(head);
     items.forEach(function (it) {
-      var href = noteHref(it);
       var card = el("div", "post");
       var left = el("div");
-      if (href) {
-        var titleLink = document.createElement("a");
-        titleLink.href = href;
-        titleLink.style.textDecoration = "none";
-        titleLink.style.color = "inherit";
-        titleLink.appendChild(el("h3", null, it.title));
-        left.appendChild(titleLink);
-      } else {
-        left.appendChild(el("h3", null, it.title));
-      }
-      var ex = shortExcerpt(it);
-      if (ex) left.appendChild(el("p", null, ex));
+      var titleButton = openTitle(it.title);
+      left.appendChild(titleButton);
       var meta = metaLine(it);
       if (meta) left.appendChild(meta);
-      if (href) {
-        var open = document.createElement("a");
-        open.href = href;
-        open.className = "btn btn-line btn-sm";
-        open.textContent = "Read note";
-        left.appendChild(open);
-      }
+      var ex = shortExcerpt(it);
+      if (ex) left.appendChild(el("p", "api-excerpt", ex));
       addShareButton(left, it, noteShareUrl(it));
       card.appendChild(left);
       var pics = imageList(it);
       if (pics.length) {
-        var thumbWrap = document.createElement(href ? "a" : "div");
-        if (href) thumbWrap.href = href;
-        thumbWrap.className = "api-thumb";
+        var thumbWrap = el("div", "api-thumb");
         var img = document.createElement("img");
         img.src = pics[0];
         img.alt = "";
@@ -555,6 +570,7 @@
         thumbWrap.appendChild(img);
         card.appendChild(thumbWrap);
       }
+      bindExpand(titleButton, card, it, 1);
       box.appendChild(card);
     });
   }
@@ -660,37 +676,19 @@
     var head = el("p", "label", "More articles");
     box.appendChild(head);
     items.forEach(function (it) {
-      var href = articleHref(it);
       var card = el("div", "post");
       var left = el("div");
-      if (href) {
-        var titleLink = document.createElement("a");
-        titleLink.href = href;
-        titleLink.style.textDecoration = "none";
-        titleLink.style.color = "inherit";
-        titleLink.appendChild(el("h3", null, it.title));
-        left.appendChild(titleLink);
-      } else {
-        left.appendChild(el("h3", null, it.title));
-      }
-      var ex = shortExcerpt(it);
-      if (ex) left.appendChild(el("p", null, ex));
+      var titleButton = openTitle(it.title);
+      left.appendChild(titleButton);
       var meta = metaLine(it);
       if (meta) left.appendChild(meta);
-      if (href) {
-        var open = document.createElement("a");
-        open.href = href;
-        open.className = "btn btn-line btn-sm";
-        open.textContent = "Read article";
-        left.appendChild(open);
-      }
+      var ex = shortExcerpt(it);
+      if (ex) left.appendChild(el("p", "api-excerpt", ex));
       addShareButton(left, it, articleShareUrl(it));
       card.appendChild(left);
       var pics = imageList(it);
       if (pics.length) {
-        var thumbWrap = document.createElement(href ? "a" : "div");
-        if (href) thumbWrap.href = href;
-        thumbWrap.className = "api-thumb";
+        var thumbWrap = el("div", "api-thumb");
         var img = document.createElement("img");
         img.src = pics[0];
         img.alt = "";
@@ -698,6 +696,7 @@
         thumbWrap.appendChild(img);
         card.appendChild(thumbWrap);
       }
+      bindExpand(titleButton, card, it, 2);
       box.appendChild(card);
     });
   }

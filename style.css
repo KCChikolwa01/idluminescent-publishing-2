@@ -507,3 +507,191 @@ a { color: inherit; }
   aspect-ratio: 1.618 / 1;
   display: block;
 }
+
+/* ---------- Auto dark mode (follows device) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1c1916;
+    --wash: #2a2420;
+    --ink: #f0e8dc;
+    --soft: #c4b8a8;
+    --line: #3d342c;
+    --sun: #d4b87a;
+    --flame: #c9a06a;
+    --rose: #c9a06a;
+    --violet: #a89070;
+    --teal: #8a9a80;
+    --glow: #c9a06a;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .bar {
+    background: rgba(28, 25, 22, .97);
+    border-bottom-color: var(--line);
+  }
+
+  .brand small,
+  .brand .tagline {
+    color: var(--soft);
+  }
+
+  .nav a { color: var(--soft); }
+  .nav a:hover { color: var(--sun); }
+  .nav a.on { color: var(--sun); }
+
+  .menu-btn {
+    color: var(--ink);
+    border-color: var(--line);
+    background: var(--wash);
+  }
+
+  #mnav {
+    background: #1c1916;
+    border-top-color: var(--line);
+  }
+  #mnav a { color: var(--ink); }
+
+  .btn-line {
+    color: var(--ink);
+    border-color: var(--soft);
+    background: transparent;
+  }
+  .btn-line:hover {
+    background: var(--ink);
+    color: #1c1916;
+  }
+  .btn-glow {
+    color: #1c1916;
+    background: var(--sun);
+  }
+  .btn-glow:hover { background: #e0c88a; }
+  .btn-sun {
+    color: #1c1916;
+    background: var(--sun);
+  }
+  .btn-ink {
+    color: #f0e8dc;
+    background: #3d342c;
+  }
+
+  .kicker, .label { color: var(--sun); }
+  .lede, .dek, .blurb, .sub { color: var(--soft); }
+
+  .card {
+    background: var(--wash);
+    border-color: var(--line);
+  }
+  .card.hot {
+    background: #322b24;
+    border-color: #5a4a38;
+  }
+  .card h4 { color: var(--soft); }
+  .card p { color: var(--soft); }
+
+  .post {
+    border-color: var(--line);
+  }
+  .post:hover h3 { color: var(--sun); }
+  .thumb.t1 { background: #6b4423; }
+  .thumb.t2 { background: #4a3528; }
+
+  .feature {
+    background: #2a2420;
+    color: #f0e8dc;
+  }
+  .feature .kicker { color: var(--sun); }
+  .feature .sub { color: #c4b8a8; }
+  .feature p.blurb { color: #ddd2c2; }
+
+  .shelf.tint { background: var(--wash); }
+  .shelf.dark {
+    background: #141210;
+    color: #f0e8dc;
+    border-color: #141210;
+  }
+  .dark .shelf-head p,
+  .dark .label { color: #c4b8a8; }
+
+  .pagehead p { color: var(--soft); }
+
+  .api-status {
+    background: var(--wash);
+    border-color: var(--line);
+    color: var(--soft);
+  }
+  .api-error {
+    border-color: #8a6a40;
+    color: #e0c88a;
+  }
+  .api-note { border-bottom-color: var(--line); }
+  .api-excerpt { color: var(--soft); }
+  .api-text a { color: var(--sun); }
+
+  .api-list .post .meta { color: var(--soft); }
+  .api-list .post .meta b { color: var(--sun); }
+  .api-list .post .api-thumb { background: #322b24; }
+
+  .api-share {
+    color: var(--sun);
+    border-color: var(--line);
+  }
+  .api-share:hover { background: var(--wash); }
+
+  .byline {
+    border-color: var(--line);
+    color: var(--soft);
+  }
+  .byline b { color: var(--ink); }
+
+  .post-page li {
+    background: var(--wash);
+    border-left-color: var(--flame);
+  }
+
+  .prose .card,
+  .contact-list a.social {
+    background: var(--wash);
+    border-color: var(--line);
+    color: var(--ink);
+  }
+  .contact-list a.social:hover {
+    border-color: var(--sun);
+    background: #322b24;
+    color: var(--sun);
+  }
+
+  .tile {
+    background: var(--wash);
+    border-color: var(--line);
+  }
+  .tile:hover { border-color: var(--sun); }
+  .tile p { color: var(--soft); }
+
+  .foot {
+    background: #141210;
+    color: #c4b8a8;
+  }
+  .foot a { color: #c4b8a8; }
+  .foot a:hover { color: var(--sun); }
+  .foot .big { color: #f0e8dc; }
+
+  .kobo-band {
+    background: #2a2420;
+    color: #f0e8dc;
+  }
+
+  .chip {
+    background: var(--wash);
+    border-color: var(--line);
+    color: var(--ink);
+  }
+
+  .mast { color: var(--ink); }
+  .mast-art .halo {
+    background: radial-gradient(circle, rgba(194, 163, 102, .15), transparent 70%);
+  }
+}

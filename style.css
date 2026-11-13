@@ -448,3 +448,62 @@ a { color: inherit; }
 /* share */
 .share-row { margin: var(--s2) 0 var(--s3); }
 .share-row .btn { cursor: pointer; }
+
+/* Notes & articles list: date clear of Read / Share buttons */
+.api-list .post,
+.api-list .post > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.api-list .post {
+  margin-bottom: var(--s3);
+}
+.api-list .post h3 {
+  margin: 0 0 4px;
+}
+.api-list .post p {
+  margin: 0;
+}
+.api-list .post .meta {
+  display: block;
+  margin: 6px 0 12px;
+  line-height: 1.4;
+  position: relative;
+  z-index: 0;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--soft);
+  font-weight: 600;
+}
+.api-list .post .meta b {
+  color: var(--flame);
+}
+.api-list .post .btn,
+.api-list .post .btn-sm {
+  margin-top: 0;
+  margin-bottom: 0;
+  align-self: flex-start;
+  position: relative;
+  z-index: 1;
+}
+.api-list .post .api-share {
+  margin-top: 8px;
+  clear: both;
+  align-self: flex-start;
+}
+.api-list .post .api-thumb {
+  border-radius: 13px;
+  overflow: hidden;
+  background: #efe8da;
+  min-height: 120px;
+  display: block;
+  text-decoration: none;
+}
+.api-list .post .api-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 1.618 / 1;
+  display: block;
+}

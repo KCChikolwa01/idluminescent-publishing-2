@@ -224,6 +224,11 @@
       + ".api-body h3.api-subhead{font-weight:800;font-size:21px;line-height:1.25;margin:1em 0 .4em;color:var(--ink,#2b2622)}"
       + ".api-body p.api-text{margin:0 0 1em;white-space:pre-line;overflow-wrap:anywhere;font-size:19px;line-height:1.6}"
       + ".api-body p.api-text strong{font-weight:800}"
+      + ".api-listen-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0 18px}"
+      + ".api-listen{appearance:none;font-family:var(--sans,Inter,Arial,sans-serif);font-size:13px;font-weight:800;color:#f6f1e6;background:#5b3f2a;border:none;border-radius:999px;padding:9px 16px;cursor:pointer}"
+      + ".api-listen:hover{background:#46301f}"
+      + ".api-listen.is-on{background:#8a5a2b}"
+      + ".api-listen[disabled]{opacity:.5;cursor:not-allowed}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }
@@ -410,6 +415,72 @@
     window.prompt("Copy this link", url);
   }
 
+  function stopSpeaking() {
+    try {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    } catch (e) { /* ignore */ }
+  }
+
+  function buildSpeakText(it) {
+    var parts = [];
+    var title = String(it.title || "").trim();
+    var excerpt = String(it.excerpt || "").trim();
+    var body = String(it.content || "").trim()
+      .replace(/^#{1,3}\s+/gm, "")
+      .replace(/\*\*([^*]+)\*\*/g, "$1");
+    if (title) parts.push(title);
+    if (excerpt && body.indexOf(excerpt) !== 0) parts.push(excerpt);
+    if (body) parts.push(body);
+    return parts.join(". ").replace(/\s+/g, " ").trim();
+  }
+
+  function addListenButton(parent, it) {
+    if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance === "undefined") return;
+    var row = el("div", "api-listen-row");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "api-listen";
+    btn.textContent = "Listen";
+    btn.setAttribute("aria-label", "Listen to this piece");
+    var speaking = false;
+    function setIdle() {
+      speaking = false;
+      btn.textContent = "Listen";
+      btn.classList.remove("is-on");
+    }
+    function setOn() {
+      speaking = true;
+      btn.textContent = "Stop";
+      btn.classList.add("is-on");
+    }
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (speaking) {
+        stopSpeaking();
+        setIdle();
+        return;
+      }
+      var text = buildSpeakText(it);
+      if (!text) return;
+      stopSpeaking();
+      var utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1;
+      utter.pitch = 1;
+      utter.onend = setIdle;
+      utter.onerror = setIdle;
+      setOn();
+      try {
+        window.speechSynthesis.speak(utter);
+      } catch (err) {
+        setIdle();
+      }
+    });
+    window.addEventListener("beforeunload", stopSpeaking);
+    row.appendChild(btn);
+    parent.appendChild(row);
+  }
+
   /* ---------- notes: list = preview only; full text on /notes/read/ ---------- */
   function noteHref(it) {
     var slug = String(it.slug || "").trim();
@@ -525,6 +596,7 @@
       if (d) who.appendChild(document.createTextNode(" · " + d));
       by.appendChild(who);
       box.appendChild(by);
+      addListenButton(box, it);
       addShareButton(box, it, noteShareUrl(it));
       appendPlaced(box, it.content || "", placementList(it));
       appendPromo(box, it.book_promo);
@@ -657,6 +729,7 @@
       if (d) who.appendChild(document.createTextNode(" · " + d));
       by.appendChild(who);
       box.appendChild(by);
+      addListenButton(box, it);
       addShareButton(box, it, articleShareUrl(it));
       appendPlaced(box, it.content || "", placementList(it).slice(0, 2));
       appendPromo(box, it.book_promo);
@@ -683,6 +756,7 @@
       art.appendChild(el("h3", null, it.title));
       var meta = metaLine(it);
       if (meta) art.appendChild(meta);
+      addListenButton(art, it);
       var letter = String(it.content || it.excerpt || "").trim();
       appendPlaced(art, letter, placementList(it).slice(0, 1));
       appendPromo(art, it.book_promo);

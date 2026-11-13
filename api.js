@@ -435,7 +435,6 @@
   }
 
   function addListenButton(parent, it) {
-    if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance === "undefined") return;
     var row = el("div", "api-listen-row");
     var btn = document.createElement("button");
     btn.type = "button";
@@ -443,6 +442,9 @@
     btn.textContent = "Listen";
     btn.setAttribute("aria-label", "Listen to this piece");
     var speaking = false;
+    function canSpeak() {
+      return !!(window.speechSynthesis && typeof window.SpeechSynthesisUtterance !== "undefined");
+    }
     function setIdle() {
       speaking = false;
       btn.textContent = "Listen";
@@ -456,25 +458,36 @@
     btn.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
+      if (!canSpeak()) {
+        window.alert("Listening is not available in this browser. Try Chrome, Edge, or Safari.");
+        return;
+      }
       if (speaking) {
         stopSpeaking();
         setIdle();
         return;
       }
       var text = buildSpeakText(it);
-      if (!text) return;
-      stopSpeaking();
-      var utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 1;
-      utter.pitch = 1;
-      utter.onend = setIdle;
-      utter.onerror = setIdle;
-      setOn();
-      try {
-        window.speechSynthesis.speak(utter);
-      } catch (err) {
-        setIdle();
+      if (!text) {
+        window.alert("Nothing to read on this page yet.");
+        return;
       }
+      stopSpeaking();
+      setTimeout(function () {
+        var utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 1;
+        utter.pitch = 1;
+        utter.lang = "en-GB";
+        utter.onend = setIdle;
+        utter.onerror = function () { setIdle(); };
+        setOn();
+        try {
+          window.speechSynthesis.speak(utter);
+        } catch (err) {
+          setIdle();
+          window.alert("Could not start listening on this device.");
+        }
+      }, 50);
     });
     window.addEventListener("beforeunload", stopSpeaking);
     row.appendChild(btn);

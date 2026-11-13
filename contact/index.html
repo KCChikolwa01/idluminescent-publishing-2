@@ -22,6 +22,20 @@
 .contact-list a.social svg { width: 28px; height: 28px; flex-shrink: 0; fill: currentColor; }
 .contact-list a.social span.label { font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 2px; }
 .contact-list a.social span.value { font-size: 16px; font-weight: 600; color: inherit; }
+@media (prefers-color-scheme: dark) {
+  .contact-list a.social {
+    background: #2a2420;
+    color: #f0e8dc;
+    border-color: #3d342c;
+  }
+  .contact-list a.social:hover {
+    background: #322b24;
+    color: #d4b87a;
+    border-color: #d4b87a;
+  }
+  .contact-list a.social span.label { color: #d4b87a; }
+  .contact-list a.social span.value { color: #f0e8dc; }
+}
 </style>
 </head><body><header class="bar"><div class="wrap"><a class="brand" href="/index.html" aria-label="ID Luminescent Publishing, home"><img src="/brand/mark.jpg" alt=""><span>ID LUMINESCENT<small>Publishing</small><em class="tagline">Perspectives Worth Exploring.</em></span></a>
 <nav class="nav" aria-label="Primary"><a href="/books/">Books</a><a href="/series/">Series</a><a href="/articles/">Articles</a><a href="/notes/">Notes</a><a href="/newsletter/">Newsletter</a><a href="/about/">About</a><a class="btn btn-glow btn-sm" href="/index.html#shop">Shop now</a></nav>

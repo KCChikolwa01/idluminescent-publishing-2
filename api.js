@@ -91,26 +91,64 @@
     }
   }
 
-  /* Text with clickable http(s) links. Line breaks kept by CSS (white-space: pre-line). */
+  /* Inline: **bold**, links. Safe (text nodes only). */
   function linkify(parent, text) {
-    var re = /(https?:\/\/[^\s<>"']+)/g;
     var str = String(text == null ? "" : text);
+    var re = /(\*\*([^*]+)\*\*|https?:\/\/[^\s<>"']+)/g;
     var last = 0, m;
     while ((m = re.exec(str)) !== null) {
-      var url = m[1], trail = "";
-      var t = url.match(/[.,;:!?)\]}]+$/);
-      if (t) { trail = t[0]; url = url.slice(0, -trail.length); }
       if (m.index > last) parent.appendChild(document.createTextNode(str.slice(last, m.index)));
-      var a = document.createElement("a");
-      a.href = url;
-      a.textContent = url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer nofollow";
-      parent.appendChild(a);
-      if (trail) parent.appendChild(document.createTextNode(trail));
-      last = m.index + m[1].length;
+      if (m[2] != null) {
+        var strong = document.createElement("strong");
+        strong.textContent = m[2];
+        parent.appendChild(strong);
+      } else {
+        var url = m[1], trail = "";
+        var t = url.match(/[.,;:!?)\]}]+$/);
+        if (t) { trail = t[0]; url = url.slice(0, -trail.length); }
+        var a = document.createElement("a");
+        a.href = url;
+        a.textContent = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer nofollow";
+        parent.appendChild(a);
+        if (trail) parent.appendChild(document.createTextNode(trail));
+      }
+      last = m.index + m[0].length;
     }
     if (last < str.length) parent.appendChild(document.createTextNode(str.slice(last)));
+  }
+
+  /* Block: ## / ### headings, paragraphs. */
+  function appendRichText(parent, content) {
+    var raw = String(content || "").replace(/\r\n/g, "\n").trim();
+    if (!raw) return;
+    var blocks = raw.split(/\n\s*\n/);
+    if (blocks.length === 1 && raw.indexOf("\n") !== -1) {
+      blocks = raw.split("\n");
+    }
+    blocks.forEach(function (block) {
+      var line = String(block || "").trim();
+      if (!line) return;
+      var h3 = line.match(/^###\s+(.+)$/);
+      var h2 = line.match(/^##\s+(.+)$/);
+      var h1 = line.match(/^#\s+(.+)$/);
+      if (h3) {
+        parent.appendChild(el("h3", "api-subhead", h3[1].trim()));
+        return;
+      }
+      if (h2) {
+        parent.appendChild(el("h2", "api-subhead", h2[1].trim()));
+        return;
+      }
+      if (h1) {
+        parent.appendChild(el("h2", "api-subhead", h1[1].trim()));
+        return;
+      }
+      var p = el("p", "api-text");
+      linkify(p, line);
+      parent.appendChild(p);
+    });
   }
 
   function dedupe(items, kind) {
@@ -182,6 +220,10 @@
       + ".api-share{appearance:none;font-family:var(--sans,Inter,Arial,sans-serif);font-size:13px;font-weight:800;color:var(--flame,#8a5a32);background:transparent;border:1px solid var(--line,#c4b39a);border-radius:999px;padding:7px 14px;margin-top:12px;cursor:pointer}"
       + ".api-share:hover{background:var(--wash,#f6f1e6)}"
       + ".post .btn{margin-top:10px}"
+      + ".api-body .api-subhead,.api-body h2.api-subhead{font-weight:800;font-size:26px;line-height:1.2;margin:1.2em 0 .5em;letter-spacing:-.01em;color:var(--ink,#2b2622)}"
+      + ".api-body h3.api-subhead{font-weight:800;font-size:21px;line-height:1.25;margin:1em 0 .4em;color:var(--ink,#2b2622)}"
+      + ".api-body p.api-text{margin:0 0 1em;white-space:pre-line;overflow-wrap:anywhere;font-size:19px;line-height:1.6}"
+      + ".api-body p.api-text strong{font-weight:800}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }
@@ -264,8 +306,8 @@
     loose.forEach(function (pic) { parent.appendChild(makeFigure(pic)); });
     if (!positioned.length) {
       if (String(content || "").trim()) {
-        var body = el("div", "api-text");
-        linkify(body, content || "");
+        var body = el("div", "api-body");
+        appendRichText(body, content || "");
         parent.appendChild(body);
       }
       return;
@@ -276,9 +318,9 @@
       return;
     }
     paras.forEach(function (text, i) {
-      var p = el("p", "api-text");
-      linkify(p, text);
-      parent.appendChild(p);
+      var block = el("div", "api-body");
+      appendRichText(block, text);
+      parent.appendChild(block);
       positioned.filter(function (pic) { return Number(pic.after) === i + 1; }).forEach(function (pic) {
         parent.appendChild(makeFigure(pic));
       });

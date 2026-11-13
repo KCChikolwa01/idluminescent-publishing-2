@@ -229,6 +229,10 @@
       + ".api-listen:hover{background:#46301f}"
       + ".api-listen.is-on{background:#8a5a2b}"
       + ".api-listen[disabled]{opacity:.5;cursor:not-allowed}"
+       + ".api-open{appearance:none;background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%}"
++ ".api-open h3{margin:0 0 4px}"
++ ".api-full{margin-top:14px}"
++ ".api-list .post .meta{display:block;clear:both;margin:8px 0 10px}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }

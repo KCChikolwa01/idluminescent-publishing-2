@@ -229,10 +229,6 @@
       + ".api-listen:hover{background:#46301f}"
       + ".api-listen.is-on{background:#8a5a2b}"
       + ".api-listen[disabled]{opacity:.5;cursor:not-allowed}"
-      + ".api-open{appearance:none;background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%}"
-      + ".api-open h3{margin:0 0 4px}"
-      + ".api-full{margin-top:14px}"
-      + ".api-list .post .meta{display:block;clear:both;margin:8px 0 10px}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }
@@ -498,39 +494,6 @@
     parent.appendChild(row);
   }
 
-  function openTitle(title) {
-    var button = document.createElement("button");
-    button.type = "button";
-    button.className = "api-open";
-    button.setAttribute("aria-expanded", "false");
-    button.appendChild(el("h3", null, title));
-    return button;
-  }
-
-  function bindExpand(button, card, it, limit) {
-    var excerpt = null;
-    button.addEventListener("click", function () {
-      if (!excerpt) excerpt = card.querySelector(".api-excerpt");
-      var full = card.querySelector(".api-full");
-      if (full) {
-        var show = full.hasAttribute("hidden");
-        if (show) full.removeAttribute("hidden");
-        else full.setAttribute("hidden", "");
-        if (excerpt) excerpt.hidden = show;
-        button.setAttribute("aria-expanded", show ? "true" : "false");
-        return;
-      }
-      full = el("div", "api-full");
-      var pics = placementList(it);
-      if (limit != null) pics = pics.slice(0, limit);
-      appendPlaced(full, it.content || "", pics);
-      appendPromo(full, it.book_promo);
-      card.appendChild(full);
-      if (excerpt) excerpt.hidden = true;
-      button.setAttribute("aria-expanded", "true");
-    });
-  }
-
   /* ---------- notes: list = preview only; full text on /notes/read/ ---------- */
   function noteHref(it) {
     var slug = String(it.slug || "").trim();
@@ -550,19 +513,37 @@
     var head = el("p", "label", "More notes");
     box.appendChild(head);
     items.forEach(function (it) {
+      var href = noteHref(it);
       var card = el("div", "post");
       var left = el("div");
-      var titleButton = openTitle(it.title);
-      left.appendChild(titleButton);
+      if (href) {
+        var titleLink = document.createElement("a");
+        titleLink.href = href;
+        titleLink.style.textDecoration = "none";
+        titleLink.style.color = "inherit";
+        titleLink.appendChild(el("h3", null, it.title));
+        left.appendChild(titleLink);
+      } else {
+        left.appendChild(el("h3", null, it.title));
+      }
+      var ex = shortExcerpt(it);
+      if (ex) left.appendChild(el("p", null, ex));
       var meta = metaLine(it);
       if (meta) left.appendChild(meta);
-      var ex = shortExcerpt(it);
-      if (ex) left.appendChild(el("p", "api-excerpt", ex));
+      if (href) {
+        var open = document.createElement("a");
+        open.href = href;
+        open.className = "btn btn-line btn-sm";
+        open.textContent = "Read note";
+        left.appendChild(open);
+      }
       addShareButton(left, it, noteShareUrl(it));
       card.appendChild(left);
       var pics = imageList(it);
       if (pics.length) {
-        var thumbWrap = el("div", "api-thumb");
+        var thumbWrap = document.createElement(href ? "a" : "div");
+        if (href) thumbWrap.href = href;
+        thumbWrap.className = "api-thumb";
         var img = document.createElement("img");
         img.src = pics[0];
         img.alt = "";
@@ -570,7 +551,6 @@
         thumbWrap.appendChild(img);
         card.appendChild(thumbWrap);
       }
-      bindExpand(titleButton, card, it, 1);
       box.appendChild(card);
     });
   }
@@ -676,19 +656,37 @@
     var head = el("p", "label", "More articles");
     box.appendChild(head);
     items.forEach(function (it) {
+      var href = articleHref(it);
       var card = el("div", "post");
       var left = el("div");
-      var titleButton = openTitle(it.title);
-      left.appendChild(titleButton);
+      if (href) {
+        var titleLink = document.createElement("a");
+        titleLink.href = href;
+        titleLink.style.textDecoration = "none";
+        titleLink.style.color = "inherit";
+        titleLink.appendChild(el("h3", null, it.title));
+        left.appendChild(titleLink);
+      } else {
+        left.appendChild(el("h3", null, it.title));
+      }
+      var ex = shortExcerpt(it);
+      if (ex) left.appendChild(el("p", null, ex));
       var meta = metaLine(it);
       if (meta) left.appendChild(meta);
-      var ex = shortExcerpt(it);
-      if (ex) left.appendChild(el("p", "api-excerpt", ex));
+      if (href) {
+        var open = document.createElement("a");
+        open.href = href;
+        open.className = "btn btn-line btn-sm";
+        open.textContent = "Read article";
+        left.appendChild(open);
+      }
       addShareButton(left, it, articleShareUrl(it));
       card.appendChild(left);
       var pics = imageList(it);
       if (pics.length) {
-        var thumbWrap = el("div", "api-thumb");
+        var thumbWrap = document.createElement(href ? "a" : "div");
+        if (href) thumbWrap.href = href;
+        thumbWrap.className = "api-thumb";
         var img = document.createElement("img");
         img.src = pics[0];
         img.alt = "";
@@ -696,7 +694,6 @@
         thumbWrap.appendChild(img);
         card.appendChild(thumbWrap);
       }
-      bindExpand(titleButton, card, it, 2);
       box.appendChild(card);
     });
   }
@@ -800,10 +797,94 @@
 
   var mode = window.API_MODE, box = document.getElementById("api-box");
   if (!box) return;
+  /* ---------- homepage: latest notes + articles ---------- */
+  function homeHref(it, kind) {
+    if (kind === "note") return noteHref(it) || "/notes/";
+    return articleHref(it) || "/articles/";
+  }
+
+  function renderHome(box, items) {
+    box.textContent = "";
+    if (!items.length) {
+      setStatus(box, "No new writing yet. Browse notes and articles.", false);
+      return;
+    }
+    items.forEach(function (row) {
+      var it = row.item;
+      var kind = row.kind;
+      var href = homeHref(it, kind);
+      var card = document.createElement("a");
+      card.className = "post";
+      card.href = href;
+      var left = el("div");
+      left.appendChild(el("h3", null, it.title));
+      var ex = shortExcerpt(it);
+      if (ex) left.appendChild(el("p", null, ex));
+      var meta = el("span", "meta");
+      meta.appendChild(el("b", null, kind === "note" ? "Note" : "Article"));
+      var d = fmtDate(it.created_at || it.published_at);
+      if (d) meta.appendChild(document.createTextNode(" · " + d));
+      left.appendChild(meta);
+      card.appendChild(left);
+      var pics = imageList(it);
+      if (pics.length) {
+        var thumb = el("div", "thumb");
+        var img = document.createElement("img");
+        img.src = pics[0];
+        img.alt = "";
+        img.loading = "lazy";
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+        thumb.appendChild(img);
+        card.appendChild(thumb);
+      } else {
+        var fallback = el("div", "thumb " + (kind === "note" ? "t1" : "t2"));
+        fallback.textContent = kind === "note" ? "Note" : "Article";
+        card.appendChild(fallback);
+      }
+      box.appendChild(card);
+    });
+    var more = el("p");
+    more.style.marginTop = "21px";
+    var a1 = document.createElement("a");
+    a1.href = "/notes/";
+    a1.className = "btn btn-line btn-sm";
+    a1.textContent = "All notes";
+    var a2 = document.createElement("a");
+    a2.href = "/articles/";
+    a2.className = "btn btn-line btn-sm";
+    a2.style.marginLeft = "10px";
+    a2.textContent = "All articles";
+    more.appendChild(a1);
+    more.appendChild(a2);
+    box.appendChild(more);
+  }
+
+  function initHome(box) {
+    setStatus(box, "Loading latest writing…", false);
+    Promise.all([
+      fetchItems(ENDPOINTS.notes).catch(function () { return []; }),
+      fetchItems(ENDPOINTS.articles).catch(function () { return []; })
+    ]).then(function (results) {
+      var notes = dedupe(results[0] || [], "notes").map(function (it) {
+        return { kind: "note", item: it, t: Date.parse(it.created_at || it.published_at || 0) || 0 };
+      });
+      var articles = dedupe(results[1] || [], "articles").map(function (it) {
+        return { kind: "article", item: it, t: Date.parse(it.created_at || it.published_at || 0) || 0 };
+      });
+      var merged = notes.concat(articles).sort(function (a, b) { return b.t - a.t; }).slice(0, 5);
+      renderHome(box, merged);
+    }).catch(function () {
+      setStatus(box, "We could not load the latest writing just now.", true);
+    });
+  }
+
   ensureStyles();
   if (mode === "notes") initNotes(box);
   else if (mode === "articles") initArticles(box);
   else if (mode === "article") initReader(box);
   else if (mode === "note") initNoteReader(box);
   else if (mode === "reflections") initReflections(box);
+  else if (mode === "home") initHome(box);
 })();

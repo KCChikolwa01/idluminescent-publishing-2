@@ -695,3 +695,43 @@ a { color: inherit; }
     background: radial-gradient(circle, rgba(194, 163, 102, .15), transparent 70%);
   }
 }
+.btn[href*="a.co"] { padding-left: 2.9em; position: relative; }
+.btn[href*="a.co"]::before,
+.btn[href*="amazon.com"]::before,
+.btn[href*="kobo.com"]::before,
+.btn[href*="elevenreader.io"]::before,
+.btn[href*="books.apple.com"]::before {
+  color: #1c1916;
+  background: rgba(255,255,255,.85);
+  border-color: rgba(28,25,22,.25);
+}
+.btn-ink[href*="a.co"]::before,
+.btn-ink[href*="amazon.com"]::before,
+.btn-teal[href*="kobo.com"]::before,
+.btn-glow[href*="a.co"]::before,
+.btn-glow[href*="amazon.com"]::before {
+  color: #f6f1e6;
+  background: rgba(255,255,255,.16);
+  border-color: rgba(255,255,255,.45);
+}
+.btn[href*="a.co"]::before { content: "A"; }
+
+@media (prefers-color-scheme: dark) {
+  .buy .row {
+    background: #2a2420;
+    border-color: #3d342c;
+    color: #f0e8dc;
+  }
+  .buy .row b { color: #f0e8dc; }
+  .buy .row span { color: #d4b87a; }
+  .buy .row .btn-line {
+    color: #f0e8dc;
+    border-color: #d4b87a;
+    background: transparent;
+  }
+  .buy .row .btn-sun,
+  .buy .row .btn-glow {
+    color: #1c1916;
+    background: #d4b87a;
+  }
+}

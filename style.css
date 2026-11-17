@@ -715,3 +715,19 @@ a { color: inherit; }
   content: none !important;
   display: none !important;
 }
+.foot-grid { grid-template-columns: 1.4fr .8fr .8fr; align-items: start; }
+.foot-brand { display: flex; align-items: center; gap: 14px; text-decoration: none; color: #f6f1e6; margin-bottom: 16px; }
+.foot-brand img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; }
+.foot-brand span { font-family: var(--sans); font-weight: 800; letter-spacing: .12em; font-size: 14px; line-height: 1.15; }
+.foot-brand small { display: block; letter-spacing: .18em; font-size: 11px; color: #d8bd85; margin-top: 4px; }
+.foot a { padding: 6px 0; font-size: 15px; }
+.foot .fine { color: #d6ccb9; }
+@media (max-width: 860px) {
+  .foot .foot-grid { grid-template-columns: 1fr 1fr; }
+  .foot .foot-grid > div:first-child { grid-column: 1 / -1; }
+}
+@media (prefers-color-scheme: dark) {
+  .foot a { color: #f0e8dc; }
+  .foot h5 { color: #d4b87a; }
+  .foot-brand, .foot-brand span { color: #f0e8dc; }
+}

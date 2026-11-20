@@ -62,3 +62,16 @@ document.querySelectorAll("[data-share]").forEach(function(btn){
 </div>
 <div class="fine">&copy; 2026 ID Luminescent Publishing</div>
 </div></footer>
+  <script>
+(function () {
+  var button = document.querySelector(".menu-btn");
+  var menu = document.getElementById("mnav");
+  if (!button || !menu) return;
+  button.addEventListener("click", function () {
+    var open = menu.classList.toggle("open");
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+})();
+</script>
+</body>
+</html>

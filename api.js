@@ -229,6 +229,9 @@
       + ".api-listen:hover{background:#46301f}"
       + ".api-listen.is-on{background:#8a5a2b}"
       + ".api-listen[disabled]{opacity:.5;cursor:not-allowed}"
+      + ".api-signup{margin:34px 0 12px;padding:22px 20px;border-radius:18px;background:var(--wash,#f6f1e6);border:1px solid var(--line,#c4b39a)}"
+      + ".api-signup h2{font-size:24px;margin:0 0 8px;line-height:1.25}"
+      + ".api-signup p{margin:0 0 14px;color:var(--soft,#6b5e4e);font-size:17px;line-height:1.5}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }
@@ -746,6 +749,7 @@
       addShareButton(box, it, articleShareUrl(it));
       appendPlaced(box, it.content || "", placementList(it).slice(0, 2));
       appendPromo(box, it.book_promo);
+      appendArticleSignup(box);
       try {
         document.title = String(it.title || "Article") + " — ID Luminescent Publishing";
       } catch (e) { /* ignore */ }
@@ -757,6 +761,39 @@
       box.appendChild(el("h1", null, "We could not load this article"));
       box.appendChild(el("p", "dek", friendlyApiError(err, "articles")));
     });
+  }
+
+  function ensureSenderScript() {
+    if (window.sender || document.querySelector('script[src*="cdn.sender.net"]')) return;
+    (function (s, e, n, d, er) {
+      s["Sender"] = er;
+      s[er] = s[er] || function () { (s[er].q = s[er].q || []).push(arguments); };
+      s[er].l = 1 * new Date();
+      s[er].on = function (event, callback) {
+        s[er].listeners = s[er].listeners || {};
+        (s[er].listeners[event] = s[er].listeners[event] || []).push(callback);
+      };
+      var a = e.createElement(n), m = e.getElementsByTagName(n)[0];
+      a.async = 1;
+      a.src = d;
+      if (m && m.parentNode) m.parentNode.insertBefore(a, m);
+      else e.head.appendChild(a);
+    })(window, document, "script", "https://cdn.sender.net/accounts_resources/universal.js", "sender");
+    try { window.sender("2fce9b847d0633"); } catch (e) { /* ignore */ }
+  }
+
+  function appendArticleSignup(parent) {
+    if (!parent || parent.querySelector(".api-signup")) return;
+    ensureSenderScript();
+    var box = el("aside", "api-signup");
+    box.appendChild(el("h2", null, "Enjoyed this reflection?"));
+    box.appendChild(el("p", null, "Receive new reflections on love, relationships, identity and the human experience directly in your inbox."));
+    var form = el("div");
+    form.className = "sender-form-field";
+    form.setAttribute("data-sender-form-id", "bmZr3O");
+    form.style.textAlign = "left";
+    box.appendChild(form);
+    parent.appendChild(box);
   }
 
   /* ---------- reflections / newsletter letters ---------- */

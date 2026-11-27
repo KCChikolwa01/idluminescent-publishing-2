@@ -244,6 +244,8 @@
       + ".api-signup{margin:34px 0 12px;padding:22px 20px;border-radius:18px;background:var(--wash,#f6f1e6);border:1px solid var(--line,#c4b39a)}"
       + ".api-signup h2{font-size:24px;margin:0 0 8px;line-height:1.25}"
       + ".api-signup p{margin:0 0 14px;color:var(--soft,#6b5e4e);font-size:17px;line-height:1.5}"
+       + ".api-body ul.api-list-items,.api-body ol.api-list-items{margin:0 0 1em;padding-left:1.25em}"
++ ".api-body .api-list-items li{margin:0 0 .4em;font-size:19px;line-height:1.55}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }

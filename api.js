@@ -419,23 +419,128 @@
   }
 
   function stopSpeaking() {
-    try {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-    } catch (e) { /* ignore */ }
+  try {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  } catch (e) { /* ignore */ }
+}
+
+function buildSpeakText(it) {
+  var parts = [];
+  var title = String(it.title || "").trim();
+  var excerpt = String(it.excerpt || "").trim();
+  var body = String(it.content || "").trim()
+    .replace(/^#{1,3}\s+/gm, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1");
+  if (title) parts.push(title);
+  if (excerpt && body.indexOf(excerpt) !== 0) parts.push(excerpt);
+  if (body) parts.push(body);
+  return parts.join(". ").replace(/\s+/g, " ").trim();
+}
+
+function pickVoice() {
+  var voices = [];
+  try { voices = window.speechSynthesis.getVoices() || []; } catch (e) { return null; }
+  var prefer = ["Google UK English Male", "Daniel", "Google UK English Female", "Serena", "Arthur", "Martha"];
+  var i, v, name;
+  for (i = 0; i < prefer.length; i++) {
+    for (v = 0; v < voices.length; v++) {
+      name = voices[v].name || "";
+      if (name.indexOf(prefer[i]) !== -1) return voices[v];
+    }
+  }
+  for (v = 0; v < voices.length; v++) {
+    if (String(voices[v].lang || "").indexOf("en-GB") === 0) return voices[v];
+  }
+  for (v = 0; v < voices.length; v++) {
+    if (String(voices[v].lang || "").indexOf("en") === 0) return voices[v];
+  }
+  return null;
+}
+
+function addListenButton(parent, it) {
+  var row = el("div", "api-listen-row");
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "api-listen";
+  btn.textContent = "Listen";
+  btn.setAttribute("aria-label", "Listen to this piece");
+  var speaking = false;
+  var keeper = null;
+
+  function canSpeak() {
+    return !!(window.speechSynthesis && typeof window.SpeechSynthesisUtterance !== "undefined");
+  }
+  function setIdle() {
+    speaking = false;
+    if (keeper) { clearInterval(keeper); keeper = null; }
+    btn.textContent = "Listen";
+    btn.classList.remove("is-on");
+  }
+  function setOn() {
+    speaking = true;
+    btn.textContent = "Stop";
+    btn.classList.add("is-on");
   }
 
-  function buildSpeakText(it) {
-    var parts = [];
-    var title = String(it.title || "").trim();
-    var excerpt = String(it.excerpt || "").trim();
-    var body = String(it.content || "").trim()
-      .replace(/^#{1,3}\s+/gm, "")
-      .replace(/\*\*([^*]+)\*\*/g, "$1");
-    if (title) parts.push(title);
-    if (excerpt && body.indexOf(excerpt) !== 0) parts.push(excerpt);
-    if (body) parts.push(body);
-    return parts.join(". ").replace(/\s+/g, " ").trim();
-  }
+  btn.addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!canSpeak()) {
+      window.alert("Listening is not available in this browser. Try Chrome or Safari.");
+      return;
+    }
+    if (speaking) {
+      stopSpeaking();
+      setIdle();
+      return;
+    }
+    var text = buildSpeakText(it);
+    if (!text) {
+      window.alert("Nothing to read on this page yet.");
+      return;
+    }
+    stopSpeaking();
+    var synth = window.speechSynthesis;
+    var chunks = [];
+    var rest = text;
+    while (rest.length > 220) {
+      var cut = rest.lastIndexOf(". ", 220);
+      if (cut < 40) cut = rest.lastIndexOf(" ", 220);
+      if (cut < 40) cut = 220;
+      chunks.push(rest.slice(0, cut + 1).trim());
+      rest = rest.slice(cut + 1).trim();
+    }
+    if (rest) chunks.push(rest);
+    var n = 0;
+    function next() {
+      if (!speaking || n >= chunks.length) { setIdle(); return; }
+      var utter = new SpeechSynthesisUtterance(chunks[n++]);
+      var voice = pickVoice();
+      if (voice) { utter.voice = voice; utter.lang = voice.lang || "en-GB"; }
+      else utter.lang = "en-GB";
+      utter.rate = 0.92;
+      utter.pitch = 0.96;
+      utter.onend = next;
+      utter.onerror = setIdle;
+      synth.speak(utter);
+    }
+    setOn();
+    next();
+    keeper = setInterval(function () {
+      try { if (synth.speaking) synth.resume(); } catch (err) {}
+    }, 8000);
+  });
+
+  row.appendChild(btn);
+  parent.appendChild(row);
+}
+
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = function () {
+    window.speechSynthesis.getVoices();
+  };
+}
 
   function addListenButton(parent, it) {
     var row = el("div", "api-listen-row");

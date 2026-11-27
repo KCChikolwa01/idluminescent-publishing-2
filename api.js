@@ -91,6 +91,7 @@
     }
   }
 
+  /* Inline: **bold**, links. Safe (text nodes only). */
   function linkify(parent, text) {
     var str = String(text == null ? "" : text);
     var re = /(\*\*([^*]+)\*\*|https?:\/\/[^\s<>"']+)/g;
@@ -118,51 +119,38 @@
     if (last < str.length) parent.appendChild(document.createTextNode(str.slice(last)));
   }
 
+  /* Block: ## / ### headings, paragraphs. */
   function appendRichText(parent, content) {
-  var raw = String(content || "").replace(/\r\n/g, "\n").trim();
-  if (!raw) return;
-  var blocks = raw.split(/\n\s*\n/);
-  if (blocks.length === 1 && raw.indexOf("\n") !== -1) {
-    blocks = raw.split("\n");
+    var raw = String(content || "").replace(/\r\n/g, "\n").trim();
+    if (!raw) return;
+    var blocks = raw.split(/\n\s*\n/);
+    if (blocks.length === 1 && raw.indexOf("\n") !== -1) {
+      blocks = raw.split("\n");
+    }
+    blocks.forEach(function (block) {
+      var line = String(block || "").trim();
+      if (!line) return;
+      var h3 = line.match(/^###\s+(.+)$/);
+      var h2 = line.match(/^##\s+(.+)$/);
+      var h1 = line.match(/^#\s+(.+)$/);
+      if (h3) {
+        parent.appendChild(el("h3", "api-subhead", h3[1].trim()));
+        return;
+      }
+      if (h2) {
+        parent.appendChild(el("h2", "api-subhead", h2[1].trim()));
+        return;
+      }
+      if (h1) {
+        parent.appendChild(el("h2", "api-subhead", h1[1].trim()));
+        return;
+      }
+      var p = el("p", "api-text");
+      linkify(p, line);
+      parent.appendChild(p);
+    });
   }
-  function isBullet(line) { return /^[-*•]\s+/.test(line); }
-  function isNumbered(line) { return /^\d+\.\s+/.test(line); }
-  blocks.forEach(function (block) {
-    var lines = String(block || "").split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
-    if (!lines.length) return;
-    if (lines.every(isBullet) || lines.every(isNumbered)) {
-      var numbered = lines.every(isNumbered);
-      var list = document.createElement(numbered ? "ol" : "ul");
-      list.className = "api-list-items";
-      lines.forEach(function (line) {
-        var li = document.createElement("li");
-        linkify(li, numbered ? line.replace(/^\d+\.\s+/, "") : line.replace(/^[-*•]\s+/, ""));
-        list.appendChild(li);
-      });
-      parent.appendChild(list);
-      return;
-    }
-    var line = lines.join("\n");
-    var h3 = line.match(/^###\s+(.+)$/);
-    var h2 = line.match(/^##\s+(.+)$/);
-    var h1 = line.match(/^#\s+(.+)$/);
-    if (h3) {
-      parent.appendChild(el("h3", "api-subhead", h3[1].trim()));
-      return;
-    }
-    if (h2) {
-      parent.appendChild(el("h2", "api-subhead", h2[1].trim()));
-      return;
-    }
-    if (h1) {
-      parent.appendChild(el("h2", "api-subhead", h1[1].trim()));
-      return;
-    }
-    var p = el("p", "api-text");
-    linkify(p, line);
-    parent.appendChild(p);
-  });
-}
+
   function dedupe(items, kind) {
     var seenSlug = {}, seenTitle = {}, seenId = {};
     var man = MANUAL[kind] || { slugs: [], titles: [] };
@@ -244,9 +232,6 @@
       + ".api-signup{margin:34px 0 12px;padding:22px 20px;border-radius:18px;background:var(--wash,#f6f1e6);border:1px solid var(--line,#c4b39a)}"
       + ".api-signup h2{font-size:24px;margin:0 0 8px;line-height:1.25}"
       + ".api-signup p{margin:0 0 14px;color:var(--soft,#6b5e4e);font-size:17px;line-height:1.5}"
-       + ".post-page ul.api-list-items,.api-body ul.api-list-items{list-style:disc;display:block;margin:0 0 1em;padding-left:1.35em}"
-+ ".post-page ol.api-list-items,.api-body ol.api-list-items{list-style:decimal;display:block;margin:0 0 1em;padding-left:1.35em}"
-+ ".post-page .api-list-items li,.api-body .api-list-items li{display:list-item;margin:0 0 .45em;font-size:19px;line-height:1.55}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }
@@ -386,11 +371,12 @@
   }
 
   function shortExcerpt(it) {
+    /* List cards: top snippet only — never the full body. Listen stays available. */
     var ex = String(it.excerpt || "").trim();
     if (!ex && it.content) {
       ex = String(it.content).trim().replace(/\s+/g, " ");
-      if (ex.length > 220) ex = ex.slice(0, 217).replace(/\s+\S*$/, "") + "…";
     }
+    if (ex.length > 180) ex = ex.slice(0, 177).replace(/\s+\S*$/, "") + "…";
     return ex;
   }
 
@@ -440,32 +426,16 @@
   }
 
   function buildSpeakText(it) {
+    var parts = [];
     var title = String(it.title || "").trim();
-    var opening = shortExcerpt(it);
-    if (title && opening && opening.indexOf(title) !== 0) {
-      return (title + ". " + opening).replace(/\s+/g, " ").trim();
-    }
-    return (opening || title).replace(/\s+/g, " ").trim();
-  }
-
-  function pickVoice() {
-    var voices = [];
-    try { voices = window.speechSynthesis.getVoices() || []; } catch (e) { return null; }
-    var prefer = ["Google UK English Male", "Daniel", "Google UK English Female", "Serena", "Arthur", "Martha"];
-    var i, v, name;
-    for (i = 0; i < prefer.length; i++) {
-      for (v = 0; v < voices.length; v++) {
-        name = voices[v].name || "";
-        if (name.indexOf(prefer[i]) !== -1) return voices[v];
-      }
-    }
-    for (v = 0; v < voices.length; v++) {
-      if (String(voices[v].lang || "").indexOf("en-GB") === 0) return voices[v];
-    }
-    for (v = 0; v < voices.length; v++) {
-      if (String(voices[v].lang || "").indexOf("en") === 0) return voices[v];
-    }
-    return null;
+    var excerpt = String(it.excerpt || "").trim();
+    var body = String(it.content || "").trim()
+      .replace(/^#{1,3}\s+/gm, "")
+      .replace(/\*\*([^*]+)\*\*/g, "$1");
+    if (title) parts.push(title);
+    if (excerpt && body.indexOf(excerpt) !== 0) parts.push(excerpt);
+    if (body) parts.push(body);
+    return parts.join(". ").replace(/\s+/g, " ").trim();
   }
 
   function addListenButton(parent, it) {
@@ -473,18 +443,15 @@
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "api-listen";
-    btn.textContent = "Short read";
-    btn.setAttribute("aria-label", "Start a short read");
+    btn.textContent = "Listen";
+    btn.setAttribute("aria-label", "Listen to this piece");
     var speaking = false;
-    var keeper = null;
-
     function canSpeak() {
       return !!(window.speechSynthesis && typeof window.SpeechSynthesisUtterance !== "undefined");
     }
     function setIdle() {
       speaking = false;
-      if (keeper) { clearInterval(keeper); keeper = null; }
-      btn.textContent = "Short read";
+      btn.textContent = "Listen";
       btn.classList.remove("is-on");
     }
     function setOn() {
@@ -492,12 +459,11 @@
       btn.textContent = "Stop";
       btn.classList.add("is-on");
     }
-
     btn.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
       if (!canSpeak()) {
-        window.alert("Listening is not available in this browser. Try Chrome or Safari.");
+        window.alert("Listening is not available in this browser. Try Chrome, Edge, or Safari.");
         return;
       }
       if (speaking) {
@@ -511,48 +477,28 @@
         return;
       }
       stopSpeaking();
-      var synth = window.speechSynthesis;
-      var chunks = [];
-      var rest = text;
-      while (rest.length > 220) {
-        var cut = rest.lastIndexOf(". ", 220);
-        if (cut < 40) cut = rest.lastIndexOf(" ", 220);
-        if (cut < 40) cut = 220;
-        chunks.push(rest.slice(0, cut + 1).trim());
-        rest = rest.slice(cut + 1).trim();
-      }
-      if (rest) chunks.push(rest);
-      var n = 0;
-      function next() {
-        if (!speaking || n >= chunks.length) { setIdle(); return; }
-        var utter = new SpeechSynthesisUtterance(chunks[n++]);
-        var voice = pickVoice();
-        if (voice) { utter.voice = voice; utter.lang = voice.lang || "en-GB"; }
-        else utter.lang = "en-GB";
-        utter.rate = 0.92;
-        utter.pitch = 0.96;
-        utter.onend = next;
-        utter.onerror = setIdle;
-        synth.speak(utter);
-      }
-      setOn();
-      next();
-      keeper = setInterval(function () {
-        try { if (synth.speaking) synth.resume(); } catch (err) {}
-      }, 8000);
+      setTimeout(function () {
+        var utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 1;
+        utter.pitch = 1;
+        utter.lang = "en-GB";
+        utter.onend = setIdle;
+        utter.onerror = function () { setIdle(); };
+        setOn();
+        try {
+          window.speechSynthesis.speak(utter);
+        } catch (err) {
+          setIdle();
+          window.alert("Could not start listening on this device.");
+        }
+      }, 50);
     });
-
+    window.addEventListener("beforeunload", stopSpeaking);
     row.appendChild(btn);
     parent.appendChild(row);
   }
 
-  if (window.speechSynthesis) {
-    window.speechSynthesis.getVoices();
-    window.speechSynthesis.onvoiceschanged = function () {
-      window.speechSynthesis.getVoices();
-    };
-  }
-
+  /* ---------- notes: list = preview only; full text on /notes/read/ ---------- */
   function noteHref(it) {
     var slug = String(it.slug || "").trim();
     if (slug) return "/notes/read/?slug=" + encodeURIComponent(slug);
@@ -696,6 +642,7 @@
     });
   }
 
+  /* ---------- articles ---------- */
   function articleHref(it) {
     var slug = String(it.slug || "").trim();
     if (slug) return "/articles/read/?slug=" + encodeURIComponent(slug);
@@ -852,6 +799,7 @@
     parent.appendChild(box);
   }
 
+  /* ---------- reflections / newsletter letters ---------- */
   function renderReflections(box, items) {
     box.textContent = "";
     var head = el("p", "label", "Letters");
@@ -889,7 +837,7 @@
 
   var mode = window.API_MODE, box = document.getElementById("api-box");
   if (!box) return;
-
+  /* ---------- homepage: latest notes + articles ---------- */
   function homeHref(it, kind) {
     if (kind === "note") return noteHref(it) || "/notes/";
     return articleHref(it) || "/articles/";

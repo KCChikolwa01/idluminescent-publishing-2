@@ -91,7 +91,6 @@
     }
   }
 
-  /* Inline: **bold**, links. Safe (text nodes only). */
   function linkify(parent, text) {
     var str = String(text == null ? "" : text);
     var re = /(\*\*([^*]+)\*\*|https?:\/\/[^\s<>"']+)/g;
@@ -119,7 +118,6 @@
     if (last < str.length) parent.appendChild(document.createTextNode(str.slice(last)));
   }
 
-  /* Block: ## / ### headings, paragraphs. */
   function appendRichText(parent, content) {
     var raw = String(content || "").replace(/\r\n/g, "\n").trim();
     if (!raw) return;
@@ -419,143 +417,57 @@
   }
 
   function stopSpeaking() {
-  try {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-  } catch (e) { /* ignore */ }
-}
+    try {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    } catch (e) { /* ignore */ }
+  }
 
-function buildSpeakText(it) {
-  var parts = [];
-  var title = String(it.title || "").trim();
-  var excerpt = String(it.excerpt || "").trim();
-  var body = String(it.content || "").trim()
-    .replace(/^#{1,3}\s+/gm, "")
-    .replace(/\*\*([^*]+)\*\*/g, "$1");
-  if (title) parts.push(title);
-  if (excerpt && body.indexOf(excerpt) !== 0) parts.push(excerpt);
-  if (body) parts.push(body);
-  return parts.join(". ").replace(/\s+/g, " ").trim();
-}
+  function buildSpeakText(it) {
+    var title = String(it.title || "").trim();
+    var opening = shortExcerpt(it);
+    if (title && opening && opening.indexOf(title) !== 0) {
+      return (title + ". " + opening).replace(/\s+/g, " ").trim();
+    }
+    return (opening || title).replace(/\s+/g, " ").trim();
+  }
 
-function pickVoice() {
-  var voices = [];
-  try { voices = window.speechSynthesis.getVoices() || []; } catch (e) { return null; }
-  var prefer = ["Google UK English Male", "Daniel", "Google UK English Female", "Serena", "Arthur", "Martha"];
-  var i, v, name;
-  for (i = 0; i < prefer.length; i++) {
+  function pickVoice() {
+    var voices = [];
+    try { voices = window.speechSynthesis.getVoices() || []; } catch (e) { return null; }
+    var prefer = ["Google UK English Male", "Daniel", "Google UK English Female", "Serena", "Arthur", "Martha"];
+    var i, v, name;
+    for (i = 0; i < prefer.length; i++) {
+      for (v = 0; v < voices.length; v++) {
+        name = voices[v].name || "";
+        if (name.indexOf(prefer[i]) !== -1) return voices[v];
+      }
+    }
     for (v = 0; v < voices.length; v++) {
-      name = voices[v].name || "";
-      if (name.indexOf(prefer[i]) !== -1) return voices[v];
+      if (String(voices[v].lang || "").indexOf("en-GB") === 0) return voices[v];
     }
-  }
-  for (v = 0; v < voices.length; v++) {
-    if (String(voices[v].lang || "").indexOf("en-GB") === 0) return voices[v];
-  }
-  for (v = 0; v < voices.length; v++) {
-    if (String(voices[v].lang || "").indexOf("en") === 0) return voices[v];
-  }
-  return null;
-}
-
-function addListenButton(parent, it) {
-  var row = el("div", "api-listen-row");
-  var btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "api-listen";
-  btn.textContent = "Listen";
-  btn.setAttribute("aria-label", "Listen to this piece");
-  var speaking = false;
-  var keeper = null;
-
-  function canSpeak() {
-    return !!(window.speechSynthesis && typeof window.SpeechSynthesisUtterance !== "undefined");
-  }
-  function setIdle() {
-    speaking = false;
-    if (keeper) { clearInterval(keeper); keeper = null; }
-    btn.textContent = "Listen";
-    btn.classList.remove("is-on");
-  }
-  function setOn() {
-    speaking = true;
-    btn.textContent = "Stop";
-    btn.classList.add("is-on");
-  }
-
-  btn.addEventListener("click", function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!canSpeak()) {
-      window.alert("Listening is not available in this browser. Try Chrome or Safari.");
-      return;
+    for (v = 0; v < voices.length; v++) {
+      if (String(voices[v].lang || "").indexOf("en") === 0) return voices[v];
     }
-    if (speaking) {
-      stopSpeaking();
-      setIdle();
-      return;
-    }
-    var text = buildSpeakText(it);
-    if (!text) {
-      window.alert("Nothing to read on this page yet.");
-      return;
-    }
-    stopSpeaking();
-    var synth = window.speechSynthesis;
-    var chunks = [];
-    var rest = text;
-    while (rest.length > 220) {
-      var cut = rest.lastIndexOf(". ", 220);
-      if (cut < 40) cut = rest.lastIndexOf(" ", 220);
-      if (cut < 40) cut = 220;
-      chunks.push(rest.slice(0, cut + 1).trim());
-      rest = rest.slice(cut + 1).trim();
-    }
-    if (rest) chunks.push(rest);
-    var n = 0;
-    function next() {
-      if (!speaking || n >= chunks.length) { setIdle(); return; }
-      var utter = new SpeechSynthesisUtterance(chunks[n++]);
-      var voice = pickVoice();
-      if (voice) { utter.voice = voice; utter.lang = voice.lang || "en-GB"; }
-      else utter.lang = "en-GB";
-      utter.rate = 0.92;
-      utter.pitch = 0.96;
-      utter.onend = next;
-      utter.onerror = setIdle;
-      synth.speak(utter);
-    }
-    setOn();
-    next();
-    keeper = setInterval(function () {
-      try { if (synth.speaking) synth.resume(); } catch (err) {}
-    }, 8000);
-  });
-
-  row.appendChild(btn);
-  parent.appendChild(row);
-}
-
-if (window.speechSynthesis) {
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = function () {
-    window.speechSynthesis.getVoices();
-  };
-}
+    return null;
+  }
 
   function addListenButton(parent, it) {
     var row = el("div", "api-listen-row");
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "api-listen";
-    btn.textContent = "Listen";
-    btn.setAttribute("aria-label", "Listen to this piece");
+    btn.textContent = "Short read";
+    btn.setAttribute("aria-label", "Start a short read");
     var speaking = false;
+    var keeper = null;
+
     function canSpeak() {
       return !!(window.speechSynthesis && typeof window.SpeechSynthesisUtterance !== "undefined");
     }
     function setIdle() {
       speaking = false;
-      btn.textContent = "Listen";
+      if (keeper) { clearInterval(keeper); keeper = null; }
+      btn.textContent = "Short read";
       btn.classList.remove("is-on");
     }
     function setOn() {
@@ -563,11 +475,12 @@ if (window.speechSynthesis) {
       btn.textContent = "Stop";
       btn.classList.add("is-on");
     }
+
     btn.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
       if (!canSpeak()) {
-        window.alert("Listening is not available in this browser. Try Chrome, Edge, or Safari.");
+        window.alert("Listening is not available in this browser. Try Chrome or Safari.");
         return;
       }
       if (speaking) {
@@ -581,28 +494,48 @@ if (window.speechSynthesis) {
         return;
       }
       stopSpeaking();
-      setTimeout(function () {
-        var utter = new SpeechSynthesisUtterance(text);
-        utter.rate = 1;
-        utter.pitch = 1;
-        utter.lang = "en-GB";
-        utter.onend = setIdle;
-        utter.onerror = function () { setIdle(); };
-        setOn();
-        try {
-          window.speechSynthesis.speak(utter);
-        } catch (err) {
-          setIdle();
-          window.alert("Could not start listening on this device.");
-        }
-      }, 50);
+      var synth = window.speechSynthesis;
+      var chunks = [];
+      var rest = text;
+      while (rest.length > 220) {
+        var cut = rest.lastIndexOf(". ", 220);
+        if (cut < 40) cut = rest.lastIndexOf(" ", 220);
+        if (cut < 40) cut = 220;
+        chunks.push(rest.slice(0, cut + 1).trim());
+        rest = rest.slice(cut + 1).trim();
+      }
+      if (rest) chunks.push(rest);
+      var n = 0;
+      function next() {
+        if (!speaking || n >= chunks.length) { setIdle(); return; }
+        var utter = new SpeechSynthesisUtterance(chunks[n++]);
+        var voice = pickVoice();
+        if (voice) { utter.voice = voice; utter.lang = voice.lang || "en-GB"; }
+        else utter.lang = "en-GB";
+        utter.rate = 0.92;
+        utter.pitch = 0.96;
+        utter.onend = next;
+        utter.onerror = setIdle;
+        synth.speak(utter);
+      }
+      setOn();
+      next();
+      keeper = setInterval(function () {
+        try { if (synth.speaking) synth.resume(); } catch (err) {}
+      }, 8000);
     });
-    window.addEventListener("beforeunload", stopSpeaking);
+
     row.appendChild(btn);
     parent.appendChild(row);
   }
 
-  /* ---------- notes: list = preview only; full text on /notes/read/ ---------- */
+  if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function () {
+      window.speechSynthesis.getVoices();
+    };
+  }
+
   function noteHref(it) {
     var slug = String(it.slug || "").trim();
     if (slug) return "/notes/read/?slug=" + encodeURIComponent(slug);
@@ -645,6 +578,7 @@ if (window.speechSynthesis) {
         open.textContent = "Read note";
         left.appendChild(open);
       }
+      addListenButton(left, it);
       addShareButton(left, it, noteShareUrl(it));
       card.appendChild(left);
       var pics = imageList(it);
@@ -745,7 +679,6 @@ if (window.speechSynthesis) {
     });
   }
 
-  /* ---------- articles ---------- */
   function articleHref(it) {
     var slug = String(it.slug || "").trim();
     if (slug) return "/articles/read/?slug=" + encodeURIComponent(slug);
@@ -788,6 +721,7 @@ if (window.speechSynthesis) {
         open.textContent = "Read article";
         left.appendChild(open);
       }
+      addListenButton(left, it);
       addShareButton(left, it, articleShareUrl(it));
       card.appendChild(left);
       var pics = imageList(it);
@@ -901,7 +835,6 @@ if (window.speechSynthesis) {
     parent.appendChild(box);
   }
 
-  /* ---------- reflections / newsletter letters ---------- */
   function renderReflections(box, items) {
     box.textContent = "";
     var head = el("p", "label", "Letters");
@@ -939,7 +872,7 @@ if (window.speechSynthesis) {
 
   var mode = window.API_MODE, box = document.getElementById("api-box");
   if (!box) return;
-  /* ---------- homepage: latest notes + articles ---------- */
+
   function homeHref(it, kind) {
     if (kind === "note") return noteHref(it) || "/notes/";
     return articleHref(it) || "/articles/";

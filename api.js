@@ -119,36 +119,50 @@
   }
 
   function appendRichText(parent, content) {
-    var raw = String(content || "").replace(/\r\n/g, "\n").trim();
-    if (!raw) return;
-    var blocks = raw.split(/\n\s*\n/);
-    if (blocks.length === 1 && raw.indexOf("\n") !== -1) {
-      blocks = raw.split("\n");
-    }
-    blocks.forEach(function (block) {
-      var line = String(block || "").trim();
-      if (!line) return;
-      var h3 = line.match(/^###\s+(.+)$/);
-      var h2 = line.match(/^##\s+(.+)$/);
-      var h1 = line.match(/^#\s+(.+)$/);
-      if (h3) {
-        parent.appendChild(el("h3", "api-subhead", h3[1].trim()));
-        return;
-      }
-      if (h2) {
-        parent.appendChild(el("h2", "api-subhead", h2[1].trim()));
-        return;
-      }
-      if (h1) {
-        parent.appendChild(el("h2", "api-subhead", h1[1].trim()));
-        return;
-      }
-      var p = el("p", "api-text");
-      linkify(p, line);
-      parent.appendChild(p);
-    });
+  var raw = String(content || "").replace(/\r\n/g, "\n").trim();
+  if (!raw) return;
+  var blocks = raw.split(/\n\s*\n/);
+  if (blocks.length === 1 && raw.indexOf("\n") !== -1) {
+    blocks = raw.split("\n");
   }
-
+  function isBullet(line) { return /^[-*•]\s+/.test(line); }
+  function isNumbered(line) { return /^\d+\.\s+/.test(line); }
+  blocks.forEach(function (block) {
+    var lines = String(block || "").split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
+    if (!lines.length) return;
+    if (lines.every(isBullet) || lines.every(isNumbered)) {
+      var numbered = lines.every(isNumbered);
+      var list = document.createElement(numbered ? "ol" : "ul");
+      list.className = "api-list-items";
+      lines.forEach(function (line) {
+        var li = document.createElement("li");
+        linkify(li, numbered ? line.replace(/^\d+\.\s+/, "") : line.replace(/^[-*•]\s+/, ""));
+        list.appendChild(li);
+      });
+      parent.appendChild(list);
+      return;
+    }
+    var line = lines.join("\n");
+    var h3 = line.match(/^###\s+(.+)$/);
+    var h2 = line.match(/^##\s+(.+)$/);
+    var h1 = line.match(/^#\s+(.+)$/);
+    if (h3) {
+      parent.appendChild(el("h3", "api-subhead", h3[1].trim()));
+      return;
+    }
+    if (h2) {
+      parent.appendChild(el("h2", "api-subhead", h2[1].trim()));
+      return;
+    }
+    if (h1) {
+      parent.appendChild(el("h2", "api-subhead", h1[1].trim()));
+      return;
+    }
+    var p = el("p", "api-text");
+    linkify(p, line);
+    parent.appendChild(p);
+  });
+}
   function dedupe(items, kind) {
     var seenSlug = {}, seenTitle = {}, seenId = {};
     var man = MANUAL[kind] || { slugs: [], titles: [] };

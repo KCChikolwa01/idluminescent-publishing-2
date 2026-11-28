@@ -119,7 +119,7 @@
     if (last < str.length) parent.appendChild(document.createTextNode(str.slice(last)));
   }
 
-  /* Block: ## / ### headings, paragraphs. */
+  /* Block: ## / ### headings, bullet lists (- or *), paragraphs. */
   function appendRichText(parent, content) {
     var raw = String(content || "").replace(/\r\n/g, "\n").trim();
     if (!raw) return;
@@ -127,9 +127,24 @@
     if (blocks.length === 1 && raw.indexOf("\n") !== -1) {
       blocks = raw.split("\n");
     }
+    function isBullet(line) { return /^[-*•]\s+/.test(line); }
+    function isNumbered(line) { return /^\d+\.\s+/.test(line); }
     blocks.forEach(function (block) {
-      var line = String(block || "").trim();
-      if (!line) return;
+      var lines = String(block || "").split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
+      if (!lines.length) return;
+      if (lines.every(isBullet) || lines.every(isNumbered)) {
+        var numbered = lines.every(isNumbered);
+        var list = document.createElement(numbered ? "ol" : "ul");
+        list.className = "api-list-items";
+        lines.forEach(function (line) {
+          var li = document.createElement("li");
+          linkify(li, numbered ? line.replace(/^\d+\.\s+/, "") : line.replace(/^[-*•]\s+/, ""));
+          list.appendChild(li);
+        });
+        parent.appendChild(list);
+        return;
+      }
+      var line = lines.join("\n");
       var h3 = line.match(/^###\s+(.+)$/);
       var h2 = line.match(/^##\s+(.+)$/);
       var h1 = line.match(/^#\s+(.+)$/);
@@ -232,6 +247,9 @@
       + ".api-signup{margin:34px 0 12px;padding:22px 20px;border-radius:18px;background:var(--wash,#f6f1e6);border:1px solid var(--line,#c4b39a)}"
       + ".api-signup h2{font-size:24px;margin:0 0 8px;line-height:1.25}"
       + ".api-signup p{margin:0 0 14px;color:var(--soft,#6b5e4e);font-size:17px;line-height:1.5}"
+      + ".post-page ul.api-list-items,.api-body ul.api-list-items{list-style:disc !important;display:block !important;margin:0 0 1em !important;padding-left:1.35em !important;gap:0 !important}"
+      + ".post-page ol.api-list-items,.api-body ol.api-list-items{list-style:decimal !important;display:block !important;margin:0 0 1em !important;padding-left:1.35em !important;gap:0 !important}"
+      + ".post-page .api-list-items li,.api-body .api-list-items li{display:list-item !important;margin:0 0 .45em !important;font-size:19px;line-height:1.55}"
       + "@media(max-width:600px){.api-promo{grid-template-columns:1fr}.api-promo-cover{width:100%;height:220px}}";
     document.head.appendChild(s);
   }
@@ -428,13 +446,14 @@
   function buildSpeakText(it) {
     var parts = [];
     var title = String(it.title || "").trim();
-    var excerpt = String(it.excerpt || "").trim();
     var body = String(it.content || "").trim()
       .replace(/^#{1,3}\s+/gm, "")
-      .replace(/\*\*([^*]+)\*\*/g, "$1");
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/^[-*]\s+/gm, "");
+    var excerpt = String(it.excerpt || "").trim();
     if (title) parts.push(title);
-    if (excerpt && body.indexOf(excerpt) !== 0) parts.push(excerpt);
     if (body) parts.push(body);
+    else if (excerpt) parts.push(excerpt);
     return parts.join(". ").replace(/\s+/g, " ").trim();
   }
 

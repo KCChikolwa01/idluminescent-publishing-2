@@ -277,7 +277,10 @@ a { color: inherit; }
 .byline img { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); }
 .byline b { color: var(--ink); display: block; font-size: 15px; }
 .post-page p { margin: 0 0 var(--s3); }
-.post-page ul { list-style: none; padding: 0; margin: 0 0 var(--s4); display: grid; gap: var(--s2); }
+.post-page ul:not(.api-list-items) { list-style: none; padding: 0; margin: 0 0 var(--s4); display: grid; gap: var(--s2); }
+.post-page ul.api-list-items { list-style: disc; display: block; margin: 0 0 1em; padding-left: 1.35em; }
+.post-page ol.api-list-items { list-style: decimal; display: block; margin: 0 0 1em; padding-left: 1.35em; }
+.post-page .api-list-items li { display: list-item; margin: 0 0 0.45em; }
 .post-page li { padding: var(--s2) var(--s3); border-left: 5px solid var(--flame); background: var(--wash); border-radius: 0 13px 13px 0; font-size: 20px; line-height: 1.5; }
 .post-page li:nth-child(2n), .post-page li:nth-child(3n) { border-color: var(--sun); }
 .post-page li strong { display: block; font-family: var(--sans); font-size: 15px; letter-spacing: .02em; margin-bottom: 2px; }
